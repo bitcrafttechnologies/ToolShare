@@ -14,6 +14,9 @@ importers:
       lightningcss:
         specifier: ^1.32.0
         version: 1.32.0
+      next:
+        specifier: ^16.2.9
+        version: 16.2.9(@babel/core@7.29.7)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.1.0))(react@19.1.0)
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -27,9 +30,6 @@ importers:
       '@types/node':
         specifier: ^25.9.3
         version: 25.9.3
-      next:
-        specifier: ^16.2.9
-        version: 16.2.9(@babel/core@7.29.7)(@playwright/test@1.61.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.7(react@19.1.0))(react@19.1.0)
       postcss-import:
         specifier: ^16.1.1
         version: 16.1.1(postcss@8.5.15)
