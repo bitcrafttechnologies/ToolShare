@@ -1,0 +1,75 @@
+{
+  "expo": {
+    "name": "Toolshare",
+    "slug": "toolshare",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "toolshare",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "backgroundColor": "#C25A3D"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.toolshare.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Toolshare uses your location to show tools near you.",
+        "NSLocationAlwaysUsageDescription": "Toolshare uses your location to show tools near you.",
+        "NSCameraUsageDescription": "Used to take photos of tools for your listing.",
+        "NSPhotoLibraryUsageDescription": "Used to pick photos of tools for your listing."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#C25A3D"
+      },
+      "package": "com.toolshare.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "$(GOOGLE_MAPS_API_KEY)"
+        }
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Toolshare uses your location to show tools near you."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Used to pick photos for your tool listing.",
+          "cameraPermission": "Used to take photos for your tool listing."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#C25A3D"
+        }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.toolshare.app",
+          "enableGooglePay": false
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      }
+    }
+  }
+}

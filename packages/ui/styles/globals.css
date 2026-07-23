@@ -1,0 +1,1035 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   ToolShare Design Tokens
+   --------------------------------------------------------------------------
+   Single source of truth for color, type, spacing, radius and shadow.
+   Edit values here to retheme the entire app — components never hardcode
+   raw Tailwind palette colors, only these token-derived utilities.
+   ========================================================================== */
+
+:root {
+
+  --base-white: oklch(100.00% 0.000 0);
+  --base-black: oklch(0.00% 0.000 0);
+
+  /* ---- Neutrals (warm stone, not cool slate) -------------------------- */
+  --color-stone-50: #fafaf8;
+  --color-stone-100: #f3f1ec;
+  --color-stone-200: #e6e2d8;
+  --color-stone-300: #d3ccbd;
+  --color-stone-400: #aea696;
+  --color-stone-500: #8a8174;
+  --color-stone-600: #6b6356;
+  --color-stone-700: #524c42;
+  --color-stone-800: #383430;
+  --color-stone-900: #25221e;
+  --color-stone-950: #161412;
+
+  /* ---- Primary: terracotta / clay -------------------------------------- */
+  --color-primary-50: #fdf3ee;
+  --color-primary-100: #fbe3d6;
+  --color-primary-200: #f5c4ac;
+  --color-primary-300: #eb9d78;
+  --color-primary-400: #df7a4e;
+  --color-primary-500: #c8602f;
+  --color-primary-600: #ab4c24;
+  --color-primary-700: #8a3c1e;
+  --color-primary-800: #6e321c;
+  --color-primary-900: #5a2b1a;
+
+  /* ---- Secondary: moss / forest green ----------------------------------- */
+  --color-secondary-50: #f2f5ee;
+  --color-secondary-100: #e1e9d6;
+  --color-secondary-200: #c3d3ae;
+  --color-secondary-300: #9fb682;
+  --color-secondary-400: #7d9961;
+  --color-secondary-500: #607d47;
+  --color-secondary-600: #4b6537;
+  --color-secondary-700: #3c512d;
+  --color-secondary-800: #314226;
+  --color-secondary-900: #2a3821;
+
+  /* ---- Trust accent: warm gold ------------------------------------------ */
+  --color-gold-50: #fdf8ec;
+  --color-gold-100: #f9ecc7;
+  --color-gold-200: #f2d68a;
+  --color-gold-300: #e9bc52;
+  --color-gold-400: #d8a02e;
+  --color-gold-500: #b8801f;
+  --color-gold-600: #946419;
+
+  /* ---- Semantic (desaturated, warm-aligned) ------------------------------ */
+  --color-success-50: #f2f5ee;
+  --color-success-100: #e1e9d6;
+  --color-success-400: #7d9961;
+  --color-success-500: #5a7a42;
+  --color-success-600: #486333;
+
+  --color-warning-50: #fdf6ea;
+  --color-warning-100: #f9e8c4;
+  --color-warning-400: #d6a13f;
+  --color-warning-500: #b3842e;
+  --color-warning-600: #946a24;
+
+  --color-danger-50: #fbf0ee;
+  --color-danger-100: #f3dad5;
+  --color-danger-400: #c06752;
+  --color-danger-500: #a14e3b;
+  --color-danger-600: #833e2f;
+
+  /* ---- Category colors (closed set of 10) --------------------------------
+     Keyed by `categories.slug` in Postgres — these ten ARE the table, so
+     adding an 11th means a migration, a token pair here, and an entry in
+     category-tag.tsx.
+
+     HEADS UP — the Figma file and the database disagree on what the
+     categories ARE. Figma ("screen-browse-home", 2023:6) draws eight:
+     Power Tools, Hand Tools, Garden & Outdoor, Automotive, Cleaning,
+     Construction, Electronics, Event & Party. Postgres has the ten
+     below. The database wins here because it is what actually renders,
+     but the design needs reconciling — don't assume this list is final.
+
+     Where a DB slug has an obvious Figma counterpart it inherits that
+     swatch's hue (landscaping←Garden, plumbing←Cleaning,
+     electrical←Electronics, aerial←Event); the rest are chosen to stay
+     distinguishable. The accent doubles as tag *text* over its own `-bg`
+     tint, so all values are darkened to a legible lightness rather than
+     used at full Figma saturation. */
+  --color-cat-power-tools: #b23c10; /* coral — Figma "Power Tools" */
+  --color-cat-power-tools-bg: #fbe7dd;
+  --color-cat-hand-tools: #5b6f8c; /* slate blue — Figma "Hand Tools" */
+  --color-cat-hand-tools-bg: #e8ecf2;
+  --color-cat-landscaping: #5a7a42; /* moss — Figma "Garden & Outdoor" */
+  --color-cat-landscaping-bg: #e7eee0;
+  --color-cat-concrete: #5a5651; /* warm stone gray — concrete reads gray */
+  --color-cat-concrete-bg: #eae8e4;
+  --color-cat-automotive: #8a6206; /* amber — Figma "Automotive" */
+  --color-cat-automotive-bg: #faefd3;
+  --color-cat-plumbing: #3f7d76; /* dusty teal — Figma "Cleaning" */
+  --color-cat-plumbing-bg: #e1eeec;
+  --color-cat-electrical: #5e5a92; /* muted indigo — Figma "Electronics" */
+  --color-cat-electrical-bg: #e9e8f2;
+  --color-cat-trailers: #4c5763; /* graphite */
+  --color-cat-trailers-bg: #e6e9ec;
+  --color-cat-aerial: #a16080; /* dusty rose — Figma "Event & Party" */
+  --color-cat-aerial-bg: #f3e3eb;
+  --color-cat-welding: #a83232; /* deep red — welding reads as heat */
+  --color-cat-welding-bg: #f7e1e1;
+
+  /* ---- Surface / text roles --------------------------------------------- */
+  --color-background: var(--color-stone-50);
+  --color-foreground: var(--color-stone-900);
+  --color-surface: #ffffff;
+  --color-surface-muted: var(--color-stone-100);
+  --color-border: var(--color-stone-200);
+  --color-border-strong: var(--color-stone-300);
+  --color-muted-foreground: var(--color-stone-500);
+  --color-ring: var(--color-primary-400);
+
+  /* ---- Typography --------------------------------------------------------- */
+  --font-heading: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* ---- Spacing (4px base scale) ------------------------------------------- */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-5: 1.25rem; /* 20px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+  --space-10: 2.5rem; /* 40px */
+  --space-12: 3rem; /* 48px */
+  --space-16: 4rem; /* 64px */
+
+  /* ---- Radius -------------------------------------------------------------- */
+  --radius-sm: 0.5rem; /* 8px  – inputs, buttons, badges */
+  --radius-default: 0.625rem; /* 10px – list items */
+  --radius-md: 0.875rem; /* 14px – cards, panels */
+  --radius-lg: 1.25rem; /* 20px – dialog, sheet */
+  --radius-full: 9999px; /* avatars, pills */
+
+  /* ---- Shadows (warm-tinted, not neutral gray) ----------------------------- */
+  --shadow-color: 25 18% 22%;
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.06);
+  --shadow-default: 0 1px 3px hsl(var(--shadow-color) / 0.08),
+    0 1px 2px hsl(var(--shadow-color) / 0.05);
+  --shadow-md: 0 4px 8px hsl(var(--shadow-color) / 0.08),
+    0 2px 4px hsl(var(--shadow-color) / 0.06);
+  --shadow-lg: 0 12px 24px hsl(var(--shadow-color) / 0.12),
+    0 4px 8px hsl(var(--shadow-color) / 0.06);
+}
+
+/* ==========================================================================
+   Dark mode token overrides
+   ========================================================================== */
+.dark {
+  --color-background: var(--color-stone-950);
+  --color-foreground: var(--color-stone-100);
+  --color-surface: var(--color-stone-900);
+  --color-surface-muted: var(--color-stone-800);
+  --color-border: var(--color-stone-800);
+  --color-border-strong: var(--color-stone-700);
+  --color-muted-foreground: var(--color-stone-400);
+  --color-ring: var(--color-primary-400);
+
+  --color-primary-50: #2c1b12;
+  --color-primary-100: #4a2818;
+
+  --shadow-color: 20 30% 4%;
+  --shadow-sm: 0 1px 2px hsl(var(--shadow-color) / 0.4);
+  --shadow-default: 0 1px 3px hsl(var(--shadow-color) / 0.5),
+    0 1px 2px hsl(var(--shadow-color) / 0.4);
+  --shadow-md: 0 4px 8px hsl(var(--shadow-color) / 0.5),
+    0 2px 4px hsl(var(--shadow-color) / 0.4);
+  --shadow-lg: 0 12px 24px hsl(var(--shadow-color) / 0.55),
+    0 4px 8px hsl(var(--shadow-color) / 0.4);
+
+  /* Tints go near-black; the accents lighten so they stay legible on them. */
+  --color-cat-power-tools: #e8815a;
+  --color-cat-power-tools-bg: #3a2117;
+  --color-cat-hand-tools: #d98d6e;
+  --color-cat-hand-tools-bg: #34221a;
+  --color-cat-landscaping: #8fb183;
+  --color-cat-landscaping-bg: #25301d;
+  --color-cat-concrete: #b3aca4;
+  --color-cat-concrete-bg: #2b2926;
+  --color-cat-automotive: #d9ab52;
+  --color-cat-automotive-bg: #3a2f17;
+  --color-cat-plumbing: #74b5ae;
+  --color-cat-plumbing-bg: #16312e;
+  --color-cat-electrical: #9998d1;
+  --color-cat-electrical-bg: #242234;
+  --color-cat-trailers: #93a5bf;
+  --color-cat-trailers-bg: #232a35;
+  --color-cat-aerial: #d193ac;
+  --color-cat-aerial-bg: #34202a;
+  --color-cat-welding: #e08585;
+  --color-cat-welding-bg: #3a1f1f;
+}
+
+/* ==========================================================================
+   Tailwind v4 theme mapping
+   --------------------------------------------------------------------------
+   Exposes every token above as a Tailwind utility (e.g. bg-primary-500,
+   rounded-md, shadow-default, font-heading). Components must only use
+   these generated utilities — never raw Tailwind palette names.
+   ========================================================================== */
+@theme inline {
+  --color-stone-50: var(--color-stone-50);
+  --color-stone-100: var(--color-stone-100);
+  --color-stone-200: var(--color-stone-200);
+  --color-stone-300: var(--color-stone-300);
+  --color-stone-400: var(--color-stone-400);
+  --color-stone-500: var(--color-stone-500);
+  --color-stone-600: var(--color-stone-600);
+  --color-stone-700: var(--color-stone-700);
+  --color-stone-800: var(--color-stone-800);
+  --color-stone-900: var(--color-stone-900);
+  --color-stone-950: var(--color-stone-950);
+
+  --color-primary-50: var(--color-primary-50);
+  --color-primary-100: var(--color-primary-100);
+  --color-primary-200: var(--color-primary-200);
+  --color-primary-300: var(--color-primary-300);
+  --color-primary-400: var(--color-primary-400);
+  --color-primary-500: var(--color-primary-500);
+  --color-primary-600: var(--color-primary-600);
+  --color-primary-700: var(--color-primary-700);
+  --color-primary-800: var(--color-primary-800);
+  --color-primary-900: var(--color-primary-900);
+  --color-primary: var(--color-primary-500);
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary-50: var(--color-secondary-50);
+  --color-secondary-100: var(--color-secondary-100);
+  --color-secondary-200: var(--color-secondary-200);
+  --color-secondary-300: var(--color-secondary-300);
+  --color-secondary-400: var(--color-secondary-400);
+  --color-secondary-500: var(--color-secondary-500);
+  --color-secondary-600: var(--color-secondary-600);
+  --color-secondary-700: var(--color-secondary-700);
+  --color-secondary-800: var(--color-secondary-800);
+  --color-secondary-900: var(--color-secondary-900);
+  --color-secondary: var(--color-secondary-500);
+  --color-secondary-foreground: #ffffff;
+
+  --color-gold-50: var(--color-gold-50);
+  --color-gold-100: var(--color-gold-100);
+  --color-gold-200: var(--color-gold-200);
+  --color-gold-300: var(--color-gold-300);
+  --color-gold-400: var(--color-gold-400);
+  --color-gold-500: var(--color-gold-500);
+  --color-gold-600: var(--color-gold-600);
+  --color-gold: var(--color-gold-400);
+  --color-gold-foreground: var(--color-stone-900);
+
+  --color-success-50: var(--color-success-50);
+  --color-success-100: var(--color-success-100);
+  --color-success-400: var(--color-success-400);
+  --color-success-500: var(--color-success-500);
+  --color-success-600: var(--color-success-600);
+  --color-success: var(--color-success-500);
+  --color-success-foreground: #ffffff;
+
+  --color-warning-50: var(--color-warning-50);
+  --color-warning-100: var(--color-warning-100);
+  --color-warning-400: var(--color-warning-400);
+  --color-warning-500: var(--color-warning-500);
+  --color-warning-600: var(--color-warning-600);
+  --color-warning: var(--color-warning-500);
+  --color-warning-foreground: #ffffff;
+
+  --color-danger-50: var(--color-danger-50);
+  --color-danger-100: var(--color-danger-100);
+  --color-danger-400: var(--color-danger-400);
+  --color-danger-500: var(--color-danger-500);
+  --color-danger-600: var(--color-danger-600);
+  --color-danger: var(--color-danger-500);
+  --color-danger-foreground: #ffffff;
+
+  --color-cat-power-tools: var(--color-cat-power-tools);
+  --color-cat-power-tools-bg: var(--color-cat-power-tools-bg);
+  --color-cat-hand-tools: var(--color-cat-hand-tools);
+  --color-cat-hand-tools-bg: var(--color-cat-hand-tools-bg);
+  --color-cat-landscaping: var(--color-cat-landscaping);
+  --color-cat-landscaping-bg: var(--color-cat-landscaping-bg);
+  --color-cat-concrete: var(--color-cat-concrete);
+  --color-cat-concrete-bg: var(--color-cat-concrete-bg);
+  --color-cat-automotive: var(--color-cat-automotive);
+  --color-cat-automotive-bg: var(--color-cat-automotive-bg);
+  --color-cat-plumbing: var(--color-cat-plumbing);
+  --color-cat-plumbing-bg: var(--color-cat-plumbing-bg);
+  --color-cat-electrical: var(--color-cat-electrical);
+  --color-cat-electrical-bg: var(--color-cat-electrical-bg);
+  --color-cat-trailers: var(--color-cat-trailers);
+  --color-cat-trailers-bg: var(--color-cat-trailers-bg);
+  --color-cat-aerial: var(--color-cat-aerial);
+  --color-cat-aerial-bg: var(--color-cat-aerial-bg);
+  --color-cat-welding: var(--color-cat-welding);
+  --color-cat-welding-bg: var(--color-cat-welding-bg);
+
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-muted-foreground: var(--color-muted-foreground);
+  --color-ring: var(--color-ring);
+
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-5: var(--space-5);
+  --spacing-6: var(--space-6);
+  --spacing-8: var(--space-8);
+  --spacing-10: var(--space-10);
+  --spacing-12: var(--space-12);
+  --spacing-16: var(--space-16);
+
+  --radius-sm: var(--radius-sm);
+  --radius-default: var(--radius-default);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-full: var(--radius-full);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-default: var(--shadow-default);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}
+
+/* ==========================================================================
+   Base layer — every raw HTML element gets a sensible, on-brand default
+   ========================================================================== */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    color-scheme: light dark;
+    /* Standardized scrollbar API — no JS scrollbar library needed.
+       Falls back silently in browsers that don't support it yet. */
+    scrollbar-color: var(--color-border-strong) transparent;
+    scrollbar-width: thin;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scrollbar-gutter: stable;
+  }
+
+  ::selection {
+    background-color: var(--color-primary-200);
+    color: var(--color-primary-900);
+  }
+
+  ::marker {
+    color: var(--color-muted-foreground);
+  }
+
+  /* ---- Headings ---------------------------------------------------------- */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--color-foreground);
+  }
+
+  h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+  }
+
+  h4 {
+    font-size: 1.25rem;
+  }
+
+  h5 {
+    font-size: 1.125rem;
+  }
+
+  h6 {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+  }
+
+  /* ---- Text ----------------------------------------------------------------- */
+  p {
+    line-height: 1.65;
+  }
+
+  p + p {
+    margin-top: var(--space-4);
+  }
+
+  a {
+    color: var(--color-primary-600);
+    text-underline-offset: 2px;
+    transition: color 150ms ease;
+  }
+
+  a:hover {
+    color: var(--color-primary-700);
+  }
+
+  small {
+    font-size: 0.875rem;
+    color: var(--color-muted-foreground);
+  }
+
+  strong,
+  b {
+    font-weight: 600;
+  }
+
+  em,
+  i {
+    font-style: italic;
+  }
+
+  mark {
+    background-color: var(--color-warning-100);
+    color: var(--color-foreground);
+    padding: 0.05em 0.2em;
+    border-radius: 0.2em;
+  }
+
+  abbr[title] {
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+    cursor: help;
+  }
+
+  kbd {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.8125em;
+    background-color: var(--color-surface-muted);
+    border: 1px solid var(--color-border-strong);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-sm);
+    padding: 0.1em 0.45em;
+  }
+
+  sub,
+  sup {
+    font-size: 0.75em;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+  }
+
+  sup {
+    top: -0.5em;
+  }
+
+  sub {
+    bottom: -0.25em;
+  }
+
+  s,
+  del {
+    text-decoration: line-through;
+    color: var(--color-muted-foreground);
+  }
+
+  ins {
+    text-decoration: underline;
+    text-decoration-color: var(--color-success-400);
+  }
+
+  address {
+    font-style: normal;
+  }
+
+  blockquote {
+    border-left: 3px solid var(--color-primary-300);
+    padding-left: var(--space-4);
+    margin: var(--space-4) 0;
+    color: var(--color-muted-foreground);
+    font-style: italic;
+  }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.875em;
+    background-color: var(--color-surface-muted);
+    padding: 0.125rem 0.375rem;
+    border-radius: var(--radius-sm);
+  }
+
+  pre {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.875rem;
+    background-color: var(--color-stone-900);
+    color: var(--color-stone-100);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+  }
+
+  /* ---- Lists ---------------------------------------------------------------- */
+  ul,
+  ol {
+    padding-left: var(--space-6);
+  }
+
+  ul {
+    list-style-type: disc;
+  }
+
+  ol {
+    list-style-type: decimal;
+  }
+
+  li + li {
+    margin-top: var(--space-1);
+  }
+
+  dl {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  dt {
+    font-weight: 600;
+    color: var(--color-foreground);
+  }
+
+  dd {
+    margin-left: var(--space-4);
+    color: var(--color-muted-foreground);
+  }
+
+  figure {
+    margin: var(--space-4) 0;
+  }
+
+  figcaption {
+    font-size: 0.875rem;
+    color: var(--color-muted-foreground);
+    margin-top: var(--space-2);
+  }
+
+  /* ---- Structural ------------------------------------------------------------- */
+  hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: var(--space-6) 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-muted-foreground);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border-strong);
+  }
+
+  td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  caption {
+    font-size: 0.875rem;
+    color: var(--color-muted-foreground);
+    text-align: left;
+    padding: var(--space-2) 0;
+    caption-side: top;
+  }
+
+  /* ---- Forms (raw tag resets; component layer adds full styling) -------------- */
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+    font-size: 1rem;
+    color: inherit;
+  }
+
+  /* Text-like inputs only — NOT checkbox/radio/range/file/color, which
+     get their own native styling below. `:where()` keeps specificity at
+     zero so project files can override without needing !important. */
+  :where(
+    input:not(
+      [type="checkbox"],
+      [type="radio"],
+      [type="range"],
+      [type="file"],
+      [type="color"],
+      [type="submit"],
+      [type="button"],
+      [type="reset"],
+      [type="image"]
+    ),
+    textarea,
+    select
+  ) {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    color-scheme: light dark;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 6rem;
+  }
+
+  select {
+    cursor: pointer;
+  }
+
+  select[multiple] {
+    padding: var(--space-1);
+  }
+
+  /* Checkbox / radio — native rendering, themed via accent-color rather
+     than a hand-built replacement control. Zero JS required. */
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 1.125rem;
+    height: 1.125rem;
+    accent-color: var(--color-primary-500);
+    cursor: pointer;
+  }
+
+  /* Range slider — themed with accent-color; add a track/thumb override
+     only where a project needs a bespoke look. */
+  input[type="range"] {
+    accent-color: var(--color-primary-500);
+    cursor: pointer;
+    width: 100%;
+  }
+
+  /* Progress / meter — same idea, no JS progress-bar component needed */
+  progress,
+  meter {
+    accent-color: var(--color-primary-500);
+    width: 100%;
+    height: 0.5rem;
+    border-radius: var(--radius-full);
+  }
+
+  progress {
+    appearance: none;
+  }
+
+  progress::-webkit-progress-bar {
+    background-color: var(--color-surface-muted);
+    border-radius: var(--radius-full);
+  }
+
+  progress::-webkit-progress-value {
+    background-color: var(--color-primary-500);
+    border-radius: var(--radius-full);
+  }
+
+  input[type="color"] {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.25rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  input[type="file"] {
+    font-size: 0.875rem;
+    color: var(--color-muted-foreground);
+  }
+
+  input[type="file"]::file-selector-button {
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-foreground);
+    background-color: var(--color-surface-muted);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    margin-right: var(--space-3);
+    cursor: pointer;
+    transition: background-color 150ms ease;
+  }
+
+  input[type="file"]::file-selector-button:hover {
+    background-color: var(--color-stone-200);
+  }
+
+  input[type="search"]::-webkit-search-cancel-button {
+    cursor: pointer;
+  }
+
+  /* Native form validity states — replaces a JS validation library for
+     the common case. :user-invalid only fires after the user has
+     interacted with the field, so it doesn't flag empty required
+     fields before the person has had a chance to fill them in. */
+  input:not([type="checkbox"], [type="radio"]):user-invalid,
+  textarea:user-invalid,
+  select:user-invalid {
+    border-color: var(--color-danger-500);
+  }
+
+  input:not([type="checkbox"], [type="radio"]):user-valid,
+  textarea:user-valid,
+  select:user-valid {
+    border-color: var(--color-success-400);
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  button:focus-visible,
+  a:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-muted-foreground);
+  }
+
+  input:disabled,
+  textarea:disabled,
+  select:disabled,
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-foreground);
+  }
+
+  fieldset {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+  }
+
+  legend {
+    font-weight: 600;
+    padding: 0 var(--space-2);
+  }
+
+  /* Raw <button> gets a real default — not primary-colored (that's a
+     component-layer choice), but never invisible either. */
+  button {
+    cursor: pointer;
+    background-color: var(--color-surface-muted);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-4);
+    font-weight: 500;
+    transition: background-color 150ms ease, border-color 150ms ease;
+  }
+
+  button:hover:not(:disabled) {
+    background-color: var(--color-stone-200);
+  }
+
+  button[type="submit"] {
+    background-color: var(--color-primary-500);
+    border-color: var(--color-primary-500);
+    color: var(--color-primary-foreground, #fff);
+  }
+
+  button[type="submit"]:hover:not(:disabled) {
+    background-color: var(--color-primary-600);
+  }
+
+  /* ---- Media ---------------------------------------------------------------- */
+  img,
+  svg,
+  video {
+    display: block;
+    max-width: 100%;
+  }
+
+  img {
+    border-radius: inherit;
+  }
+}
+
+/* ==========================================================================
+   Native interactive elements
+   --------------------------------------------------------------------------
+   Prefer these over a JS accordion/modal/popover component. They cover the
+   overwhelming majority of real use-cases (FAQ lists, settings dialogs,
+   menus, tooltips) with better accessibility defaults than a hand-rolled
+   version gets for free (focus trapping, Esc-to-close, ARIA wiring).
+   ========================================================================== */
+
+/* ---- Accordion: <details>/<summary> ------------------------------------
+   No JS state, no aria-expanded wiring — the browser owns all of it.
+   The grid-rows trick animates open/close without knowing the content's
+   height ahead of time. */
+details {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+details + details {
+  margin-top: var(--space-2);
+}
+
+summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::after {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid var(--color-muted-foreground);
+  border-bottom: 2px solid var(--color-muted-foreground);
+  transform: rotate(45deg);
+  transition: transform 200ms ease;
+  flex-shrink: 0;
+}
+
+details[open] summary::after {
+  transform: rotate(-135deg);
+}
+
+/* Usage: <details><summary>…</summary><div class="details-content"><p>…</p></div></details>
+   The wrapper is what makes the height-from-auto animation reliable —
+   grid-template-rows can't measure a bare text node as its own item. */
+.details-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 200ms ease;
+}
+
+details[open] .details-content {
+  grid-template-rows: 1fr;
+}
+
+.details-content > * {
+  overflow: hidden;
+  padding-top: var(--space-3);
+}
+
+/* ---- Modal: <dialog> ----------------------------------------------------
+   showModal() gives focus trapping, Esc-to-close, and inert background
+   for free. @starting-style + allow-discrete animate both the open
+   transition and the close transition (removal from the top layer)
+   purely in CSS. */
+dialog {
+  background-color: var(--color-surface);
+  color: var(--color-foreground);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-6);
+  max-width: min(32rem, calc(100vw - var(--space-8)));
+
+  opacity: 0;
+  transform: translateY(var(--space-4)) scale(0.98);
+  transition: opacity 200ms ease, transform 200ms ease, overlay 200ms ease allow-discrete,
+    display 200ms ease allow-discrete;
+}
+
+dialog[open] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: translateY(var(--space-4)) scale(0.98);
+  }
+}
+
+dialog::backdrop {
+  background-color: var(--base-black);
+  opacity: 0;
+  transition: opacity 200ms ease, display 200ms ease allow-discrete,
+    overlay 200ms ease allow-discrete;
+}
+
+dialog[open]::backdrop {
+  opacity: 0.4;
+}
+
+@starting-style {
+  dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* ---- Popover: [popover] attribute ----------------------------------------
+   For menus, tooltips, and non-modal dropdowns. Same anchor-free CSS
+   transition pattern as <dialog>, without the backdrop or focus trap. */
+[popover] {
+  background-color: var(--color-surface);
+  color: var(--color-foreground);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-3);
+
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 150ms ease, transform 150ms ease, overlay 150ms ease allow-discrete,
+    display 150ms ease allow-discrete;
+}
+
+[popover]:popover-open {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@starting-style {
+  [popover]:popover-open {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* ==========================================================================
+   Accessibility: respect reduced motion preference globally
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

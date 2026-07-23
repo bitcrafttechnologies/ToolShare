@@ -1,0 +1,18 @@
+/*
+ * Web app stylesheet entry.
+ *
+ * This is a single import on purpose. toolshare.css already imports the
+ * shared token base, which itself does `@import "tailwindcss"` (and that
+ * pulls in preflight). Importing tailwindcss or preflight again here
+ * emits a SECOND complete @layer theme/base/components/utilities build —
+ * roughly double the CSS, with two copies of every utility.
+ *
+ * `@source` is needed because the design system lives outside this app's
+ * directory: Tailwind v4 auto-detects candidates relative to the CSS file
+ * and skips node_modules, so the workspace-linked kit is invisible to it
+ * without an explicit path.
+ */
+@import '@toolshare/ui/styles/toolshare.css';
+
+@source "../../src";
+@source "../../../../packages/ui/src";

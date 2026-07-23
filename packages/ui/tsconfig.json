@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // The base targets plain ES libs; this package renders React in the
+    // browser, so it needs the DOM types and JSX transform on top.
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx"
+  },
+  "include": ["src", "index.ts"]
+}

@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist"
+  },
+  // `src` + `__tests__` only. This previously also listed five React
+  // components from packages/ui (tool-card, rating, status-badge, …),
+  // which pulled JSX into a package that is meant to be pure, platform-free
+  // business logic — and made `tsc` fail outright on rootDir. Domain must
+  // not reference the UI kit; if something here needs a UI type, that's a
+  // sign the logic belongs somewhere else.
+  "include": ["src", "__tests__"]
+}

@@ -1,0 +1,62 @@
+{
+  "name": "@toolshare/web",
+  "version": "0.0.1",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@stripe/react-stripe-js": "^6.6.0",
+    "@stripe/stripe-js": "^9.8.0",
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.47.0",
+    "@tanstack/react-query": "^5.62.0",
+    "@toolshare/domain": "workspace:*",
+    "@toolshare/lib": "workspace:*",
+    "@toolshare/supabase": "workspace:*",
+    "@toolshare/types": "workspace:*",
+    "@toolshare/ui": "workspace:*",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.25.0",
+    "next": "16.2.9",
+    "react": "19.1.0",
+    "react-compiler-runtime": "^1.0.0",
+    "react-day-picker": "^10.0.1",
+    "react-dom": "19.1.0",
+    "react-leaflet": "^5.0.0",
+    "tailwind-merge": "^3.6.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.1",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/leaflet": "^1.9.14",
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.0.4",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^10.5.0",
+    "eslint-config-next": "16.2.9",
+    "jsdom": "^29.1.1",
+    "lightningcss": "^1.32.0",
+    "lightningcss-darwin-arm64": "^1.32.0",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.1",
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.7"
+  }
+}

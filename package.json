@@ -1,0 +1,47 @@
+{
+  "name": "toolshare-monorepo",
+  "private": true,
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@toolshare/web",
+    "dev:ux": "turbo run dev --filter=@toolshare/ux",
+    "dev:mobile": "turbo run dev --filter=@toolshare/mobile",
+    "dev:ios": "turbo run dev --filter=@toolshare/ios",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^25.9.3",
+    "next": "^16.2.9",
+    "postcss-import": "^16.1.1",
+    "postcss-import-url": "^7.2.0",
+    "postcss-url": "^10.1.4",
+    "prettier": "^3.4.2",
+    "turbo": "^2.10.5",
+    "typescript": "^6.0.3"
+  },
+  "packageManager": "pnpm@9.15.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "dependencies": {
+    "expo": "~54.0.36",
+    "lightningcss": "^1.32.0",
+    "pnpm": "^11.8.0",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  },
+  "version": "0.0.1"
+}
