@@ -1,0 +1,33 @@
+# Controls what `gcloud builds submit` uploads as the build context.
+# (Docker layer filtering is separate — see .dockerignore.)
+# Keep ALL JS/TS source + manifests the web Docker build needs; drop the heavy
+# generated / native / install dirs.
+
+# Installed deps + build caches — the Dockerfile reinstalls/rebuilds on Linux
+node_modules/
+**/node_modules/
+**/.next/
+**/.turbo/
+dist/
+**/dist/
+coverage/
+
+# Native mobile projects — not part of the web image (this is the ~395 MiB)
+ios/
+android/
+apps/mobile/ios/
+apps/mobile/android/
+**/.expo/
+
+# VCS / CI / local
+.git/
+.github/
+.vercel/
+playwright-report/
+test-results/
+**/*.log
+**/.DS_Store
+
+# Env files never belong in the upload (build values come via --build-arg)
+**/.env
+**/.env.*

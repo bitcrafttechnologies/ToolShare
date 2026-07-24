@@ -1,0 +1,28 @@
+# Never ship install output or build caches — the image rebuilds them on Linux.
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/coverage
+
+# Env files: build values come from --build-arg, not from a copied .env
+# (prevents local dev secrets from leaking into or overriding the image).
+**/.env
+**/.env.*
+
+# The mobile app isn't built here — keep only its manifest for workspace
+# resolution (the --frozen-lockfile check needs it).
+apps/mobile/**
+!apps/mobile/package.json
+
+# VCS / tooling / local junk
+.git
+.github
+.vercel
+.expo
+**/.expo
+**/*.log
+**/.DS_Store
+.githooks
+playwright-report
+test-results

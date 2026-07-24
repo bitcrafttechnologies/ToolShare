@@ -1,0 +1,37 @@
+#!/bin/sh
+# Pre-commit guard: keep pnpm-lock.yaml in sync with package.json.
+#
+# Vercel (and any CI) installs with --frozen-lockfile, so a package.json change
+# committed without a regenerated lockfile fails the deploy with
+# ERR_PNPM_OUTDATED_LOCKFILE. This blocks that commit locally instead.
+# See memory: vercel-web-deploy.
+
+# Only run when this commit touches a manifest or the lockfile — keeps
+# unrelated commits instant.
+if ! git diff --cached --name-only | grep -qE '(^|/)package\.json$|(^|/)pnpm-lock\.yaml$'; then
+  exit 0
+fi
+
+# Don't hard-block in environments without pnpm on PATH (some GUI clients);
+# CI/Vercel is the backstop there.
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "pre-commit: pnpm not found on PATH — skipping lockfile check." >&2
+  exit 0
+fi
+
+echo "pre-commit: checking pnpm-lock.yaml is in sync with package.json…"
+if ! pnpm install --frozen-lockfile --lockfile-only >/dev/null 2>&1; then
+  echo >&2
+  echo "  ✖ pnpm-lock.yaml is out of date with a package.json in this commit." >&2
+  echo "    Vercel would reject this with ERR_PNPM_OUTDATED_LOCKFILE." >&2
+  echo >&2
+  echo "    Fix, then commit the manifest AND the lockfile together:" >&2
+  echo "      pnpm install" >&2
+  echo "      git add pnpm-lock.yaml" >&2
+  echo >&2
+  echo "    To bypass intentionally: git commit --no-verify" >&2
+  echo >&2
+  exit 1
+fi
+echo "pre-commit: lockfile in sync ✓"
+exit 0
