@@ -16,6 +16,7 @@ apps/mobile/**
 !apps/mobile/package.json
 
 # VCS / tooling / local junk
+google-cloud-sdk
 .git
 .github
 .vercel

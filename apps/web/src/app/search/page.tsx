@@ -7,8 +7,9 @@ import { Components } from '@toolshare/ui';
 import { ToolCard } from '@/components/ToolCard';
 import { SearchBar } from '@/components/SearchBar';
 import { SiteHeader } from '@/components/SiteHeader';
+import { loadTools } from '@/lib/loadTools';
 
-const { EmptyState, CategoryTag, isToolCategory } = Components;
+const { EmptyState, CategoryTag, isToolCategory, Alert } = Components;
 
 interface Props {
   searchParams: Promise<{ q?: string; category?: string; project?: string }>;
@@ -39,19 +40,19 @@ export default async function SearchPage({ searchParams }: Props) {
   // hand tools), but the search RPC only filters one category at a time, so
   // searchByProjectType fans out per category and dedupes. When a project is
   // selected it takes precedence over q/category.
-  const tools = project
-    ? await searchByProjectType({
-        projectSlug: project,
-        projectTypes,
-        fetchToolsByCategory: (id) => repo.getTools({ ...PHOENIX_CENTER, categoryId: id }),
-      }).catch(() => [])
-    : await repo
-        .getTools({
+  const { tools, failed } = await loadTools(() =>
+    project
+      ? searchByProjectType({
+          projectSlug: project,
+          projectTypes,
+          fetchToolsByCategory: (id) => repo.getTools({ ...PHOENIX_CENTER, categoryId: id }),
+        })
+      : repo.getTools({
           ...PHOENIX_CENTER,
           ...(q ? { query: q } : {}),
           ...(categoryId != null && !Number.isNaN(categoryId) ? { categoryId } : {}),
-        })
-        .catch(() => []);
+        }),
+  );
 
   const activeCategory = categories.find((c) => c.id === categoryId);
   const activeProject = projectTypes.find((p) => p.slug === project);
@@ -122,7 +123,12 @@ export default async function SearchPage({ searchParams }: Props) {
           })}
         </nav>
 
-        {tools.length > 0 ? (
+        {failed ? (
+          <Alert variant="danger">
+            We couldn&apos;t load listings just now. This is a problem on our end, not your
+            search — please try again in a moment.
+          </Alert>
+        ) : tools.length > 0 ? (
           <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {tools.map((tool, i) => (
               <ToolCard key={tool.id} tool={tool} priority={i < 4} />

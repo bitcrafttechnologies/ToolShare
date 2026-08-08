@@ -46,6 +46,13 @@ export default async function LoginPage({ searchParams }: Props) {
             Create an account
           </Link>
         </p>
+
+        <p className="mt-2 text-center text-sm text-muted-foreground">
+          No pilot code yet?{' '}
+          <Link href="/waiting-list" className="font-medium text-primary hover:text-primary-600">
+            Ask to be added to the waiting list
+          </Link>
+        </p>
       </div>
     </main>
   );

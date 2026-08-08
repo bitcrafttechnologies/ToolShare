@@ -15,6 +15,7 @@ export const toolKeys = {
   blockedDates: (toolId: string) => ['tools', 'blocked-dates', toolId] as const,
   categories: () => ['categories'] as const,
   projectTypes: () => ['project-types'] as const,
+  serviceAreas: () => ['service-areas'] as const,
 };
 
 export const bookingKeys = {

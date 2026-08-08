@@ -19,6 +19,9 @@ apps/mobile/ios/
 apps/mobile/android/
 **/.expo/
 
+# Cloud SDK installed inside the repo — never upload it as build source
+google-cloud-sdk/
+
 # VCS / CI / local
 .git/
 .github/

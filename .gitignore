@@ -50,6 +50,7 @@ packages/types/src/database.types.ts
 # Supabase
 supabase/.branches/
 supabase/.temp/
+supabase/.prod-snapshots/
 
 
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
@@ -111,3 +112,6 @@ Claude.md
 
 PILOT-SMOKE-TEST.md
 PILOT-TESTING.md
+
+# Google Cloud SDK was installed inside the repo (~465 MB) — never commit it
+google-cloud-sdk/

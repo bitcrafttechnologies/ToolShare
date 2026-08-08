@@ -9,6 +9,7 @@ export type {
   ToolBundle,
   CreateToolInput,
   ToolCondition,
+  ServiceArea,
 } from './tool';
 export { TOOL_CONDITION_LABELS } from './tool';
 export type {

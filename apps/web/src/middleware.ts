@@ -13,6 +13,8 @@ const PROTECTED_PATHS = [
   '/profile',
   '/favorites',
   '/messages',
+  // Bug reports are for signed-in pilot testers, so we know who filed them.
+  '/bug-report',
 ];
 
 export async function middleware(request: NextRequest) {

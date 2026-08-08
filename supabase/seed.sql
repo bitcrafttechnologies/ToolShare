@@ -10,6 +10,45 @@
 
 BEGIN;
 
+-- Demo owner auth accounts. In production these five are created via the Auth
+-- admin API; that step doesn't run locally, so on a fresh `supabase start` /
+-- `supabase db reset` auth.users is empty and every tools.owner_id subquery
+-- below would resolve to NULL (violating the NOT NULL constraint). Synthesize
+-- them here (same approach as scripts/supabase/sanitize-local.sql). Each is
+-- loginable locally as its email with password 'localdev123'; the
+-- on_auth_user_created trigger then creates the matching profile, which the
+-- upsert just below refines. Idempotent via NOT EXISTS.
+INSERT INTO auth.users (
+    id, instance_id, aud, role, email, encrypted_password,
+    email_confirmed_at, created_at, updated_at,
+    raw_app_meta_data, raw_user_meta_data,
+    -- These four are nullable with no default, but GoTrue scans them into Go
+    -- strings — leaving them NULL makes every sign-in fail with a 500
+    -- ("Database error querying schema" / `converting NULL to string is
+    -- unsupported`), which silently broke local login for all five accounts.
+    -- The other token columns already default to ''.
+    confirmation_token, recovery_token, email_change_token_new, email_change
+)
+SELECT
+    gen_random_uuid(),
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    v.email,
+    crypt('localdev123', gen_salt('bf')),
+    now(), now(), now(),
+    '{"provider":"email","providers":["email"]}',
+    jsonb_build_object('display_name', v.display_name),
+    '', '', '', ''
+FROM (VALUES
+    ('Mike Harrison', 'mike.harrison@toolshare-demo.app'),
+    ('Elena Rodriguez', 'elena.rodriguez@toolshare-demo.app'),
+    ('David Chen', 'david.chen@toolshare-demo.app'),
+    ('Sarah Whitfield', 'sarah.whitfield@toolshare-demo.app'),
+    ('Tom Nguyen', 'tom.nguyen@toolshare-demo.app')
+) AS v(display_name, email)
+WHERE NOT EXISTS (SELECT 1 FROM auth.users u WHERE u.email = v.email);
+
 -- Owner profiles (ids come from auth.users, created by the signup trigger).
 INSERT INTO profiles (id, display_name, email, is_identity_verified, owner_rating, review_count_owner)
 SELECT u.id, v.display_name, u.email, v.verified, v.rating, v.reviews

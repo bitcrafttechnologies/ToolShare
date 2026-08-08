@@ -1,14 +1,17 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createToolRepository } from '@toolshare/supabase';
 import { Components } from '@toolshare/ui';
 import { CategoryGrid } from '@/components/CategoryGrid';
+import { FlashToast } from '@/components/FlashToast';
 import { ToolCard } from '@/components/ToolCard';
 import { SearchBar } from '@/components/SearchBar';
 import { SiteHeader } from '@/components/SiteHeader';
+import { loadTools } from '@/lib/loadTools';
 
-const { EmptyState } = Components;
+const { EmptyState, Alert } = Components;
 
 export const metadata: Metadata = {
   title: 'Rent Tools in Phoenix | Toolshare',
@@ -20,11 +23,12 @@ export default async function HomePage() {
   const supabase = createServerSupabaseClient();
   const repo = createToolRepository(supabase);
 
-  const [categories, projectTypes, nearbyTools] = await Promise.all([
+  const [categories, projectTypes, nearby] = await Promise.all([
     repo.getCategories().catch(() => []),
     repo.getProjectTypes().catch(() => []),
-    repo.getTools({ ...PHOENIX_CENTER, radiusMiles: 75 }).catch(() => []),
+    loadTools(() => repo.getTools({ ...PHOENIX_CENTER, radiusMiles: 75 })),
   ]);
+  const { tools: nearbyTools, failed: nearbyFailed } = nearby;
 
   // Counts come off the tools we already fetched rather than a second
   // round-trip — and "N tools" then genuinely means "near you", which is
@@ -36,6 +40,12 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Suspense boundary required: FlashToast reads the redirect flag
+          (e.g. ?waitlist=1) via useSearchParams. */}
+      <Suspense fallback={null}>
+        <FlashToast />
+      </Suspense>
+
       <SiteHeader />
 
       <main>
@@ -91,7 +101,11 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            {nearbyTools.length > 0 ? (
+            {nearbyFailed ? (
+              <Alert variant="danger">
+                We couldn&apos;t load nearby tools just now. Please try again in a moment.
+              </Alert>
+            ) : nearbyTools.length > 0 ? (
               <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
                 {nearbyTools.slice(0, 12).map((tool, i) => (
                   <ToolCard key={tool.id} tool={tool} priority={i < 3} />

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { Plus, X } from 'lucide-react';
 import { TOOL_CONDITION_LABELS, type Tool, type ToolCondition } from '@toolshare/types';
-import { useCategories } from '@toolshare/supabase';
+import { useCategories, useServiceAreas } from '@toolshare/supabase';
 import { Components } from '@toolshare/ui';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { ToolPhotoPicker, uploadToolPhotos } from '@/components/ToolPhotoPicker';
@@ -23,6 +23,12 @@ export interface ToolFormValues {
   photo_urls: string[];
   specifications: Record<string, string>;
   address_display: string | null;
+  /**
+   * Which Phoenix-metro city the tool is in. Required: the DB trigger turns
+   * this into the `location_point` that `search_tools_nearby` filters on, so a
+   * listing without one is invisible in search (TKT-00003).
+   */
+  service_area_slug: string;
   pickup_available: boolean;
   delivery_available: boolean;
   delivery_radius_miles: number;
@@ -58,6 +64,7 @@ const numOrNull = (s: string): number | null => (s.trim() === '' ? null : Number
 export function ToolForm({ userId, initial, submitLabel, onSubmit }: Props) {
   const supabase = getSupabaseBrowserClient();
   const { data: categories = [] } = useCategories(supabase);
+  const { data: serviceAreas = [] } = useServiceAreas(supabase);
 
   const [existingPhotos, setExistingPhotos] = useState<string[]>(initial?.photo_urls ?? []);
   const [newPhotos, setNewPhotos] = useState<File[]>([]);
@@ -77,7 +84,7 @@ export function ToolForm({ userId, initial, submitLabel, onSubmit }: Props) {
   const [weeklyRate, setWeeklyRate] = useState(initial?.weekly_rate != null ? String(initial.weekly_rate) : '');
   const [depositAmount, setDepositAmount] = useState(initial?.deposit_amount != null ? String(initial.deposit_amount) : '');
 
-  const [addressDisplay, setAddressDisplay] = useState(initial?.address_display ?? '');
+  const [serviceAreaSlug, setServiceAreaSlug] = useState(initial?.service_area_slug ?? '');
   const [pickupAvailable, setPickupAvailable] = useState(initial?.pickup_available ?? true);
   const [deliveryAvailable, setDeliveryAvailable] = useState(initial?.delivery_available ?? false);
   const [deliveryRadiusMiles, setDeliveryRadiusMiles] = useState(
@@ -107,6 +114,13 @@ export function ToolForm({ userId, initial, submitLabel, onSubmit }: Props) {
       return;
     }
 
+    // Search is geo-filtered, so a listing with no service area would save
+    // fine and then never appear for anyone (TKT-00003).
+    if (!serviceAreaSlug) {
+      setError('Choose the city your tool is in so renters nearby can find it.');
+      return;
+    }
+
     setSaving(true);
     try {
       const uploaded = newPhotos.length ? await uploadToolPhotos(supabase, userId, newPhotos) : [];
@@ -126,7 +140,10 @@ export function ToolForm({ userId, initial, submitLabel, onSubmit }: Props) {
         deposit_amount: numOrNull(depositAmount) ?? 0,
         photo_urls: [...existingPhotos, ...uploaded],
         specifications,
-        address_display: addressDisplay.trim() || null,
+        service_area_slug: serviceAreaSlug,
+        // The DB trigger fills this from the chosen area, so it stays in step
+        // with the point search actually uses.
+        address_display: serviceAreas.find((a) => a.slug === serviceAreaSlug)?.label ?? null,
         pickup_available: pickupAvailable,
         delivery_available: deliveryAvailable,
         delivery_radius_miles:
@@ -321,8 +338,23 @@ export function ToolForm({ userId, initial, submitLabel, onSubmit }: Props) {
       <section className="flex flex-col gap-4">
         <h2 className="font-heading text-lg font-bold">Location &amp; delivery</h2>
 
-        <FormField label="Address / area">
-          <Input type="text" value={addressDisplay} onChange={(e) => setAddressDisplay(e.target.value)} placeholder="e.g. Tempe, AZ 85281" />
+        <FormField
+          label="City"
+          required
+          helperText="Renters search by distance, so this is what puts your tool on the map. Only the city is shown publicly — never your address."
+        >
+          <Select
+            value={serviceAreaSlug}
+            onChange={(e) => setServiceAreaSlug(e.target.value)}
+            required
+          >
+            <option value="">Select a city</option>
+            {serviceAreas.map((area) => (
+              <option key={area.slug} value={area.slug}>
+                {area.label}
+              </option>
+            ))}
+          </Select>
         </FormField>
 
         <div className="flex flex-col gap-3">

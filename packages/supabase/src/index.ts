@@ -24,7 +24,7 @@ export { createFavoriteRepository } from './repositories/favorite.repository';
 export type { FavoriteRepository } from './repositories/favorite.repository';
 
 // Query hooks
-export { useTools, useTool, useToolsByOwner, useBlockedDates, useCreateBlockedDate, useDeleteBlockedDate, useCategories, useCreateTool, useUpdateTool, useDeleteTool } from './hooks/useTools';
+export { useTools, useTool, useToolsByOwner, useBlockedDates, useCreateBlockedDate, useDeleteBlockedDate, useCategories, useServiceAreas, useCreateTool, useUpdateTool, useDeleteTool } from './hooks/useTools';
 export { useBookingsForRenter, useBookingsForOwner, useBooking, useCreateBooking, useUpdateBookingStatus, useRequestReturn, useConfirmReturn, usePendingRequestCount } from './hooks/useBookings';
 export { useProfile, useUpdateProfile } from './hooks/useProfile';
 export { useReviewsForTool, useReviewsForUser, useCreateReview } from './hooks/useReviews';

@@ -74,6 +74,16 @@ export function useCategories(supabase: SupabaseClient) {
   });
 }
 
+export function useServiceAreas(supabase: SupabaseClient) {
+  const repo = createToolRepository(supabase);
+  return useQuery({
+    queryKey: toolKeys.serviceAreas(),
+    queryFn: () => repo.getServiceAreas(),
+    // Reference data — a city doesn't move.
+    staleTime: 60 * 60_000,
+  });
+}
+
 export function useCreateTool(supabase: SupabaseClient) {
   const repo = createToolRepository(supabase);
   const qc = useQueryClient();

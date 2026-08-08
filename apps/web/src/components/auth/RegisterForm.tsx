@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Components } from '@toolshare/ui';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
@@ -77,6 +78,13 @@ export function RegisterForm() {
           required
         />
       </FormField>
+
+      <p className="-mt-2 text-sm text-muted-foreground">
+        Don&apos;t have a code?{' '}
+        <Link href="/waiting-list" className="font-medium text-primary hover:text-primary-600">
+          Join the waiting list
+        </Link>
+      </p>
 
       <FormField label="Display name" required>
         <Input

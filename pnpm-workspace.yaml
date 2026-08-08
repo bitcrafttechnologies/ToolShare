@@ -2,10 +2,8 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
-# react-native 0.81 pins react 19.1.0, but the web app's `react-dom: ^19`
-# floated up to 19.2.7 — a react/react-dom version mismatch that crashes the
-# jsdom test runtime. Pin both to 19.1.0 workspace-wide so every surface
-# (web build, web tests, mobile) uses one matched pair.
-overrides:
-  react: 19.1.0
-  react-dom: 19.1.0
+# react/react-dom are pinned to 19.1.0 (react-native 0.81 requires it) via
+# `pnpm.overrides` in package.json — NOT here. pnpm 9.x IGNORES `overrides` in
+# pnpm-workspace.yaml (only pnpm 10+ reads them here), so keeping the pin here
+# let react-dom silently float to 19.2.7 → "Incompatible React versions" crash
+# in `next dev`, which also made the Turbopack dev compile balloon to ~9 GB.

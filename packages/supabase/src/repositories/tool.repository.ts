@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Tool, ToolBundle, Category, ProjectType, BlockedDate, CreateToolInput } from '@toolshare/types';
+import type { Tool, ToolBundle, Category, ProjectType, BlockedDate, CreateToolInput, ServiceArea } from '@toolshare/types';
 import type { ToolSearchParams } from '../queryKeys';
 
 /**
@@ -102,6 +102,16 @@ export function createToolRepository(supabase: SupabaseClient) {
         .order('sort_order', { ascending: true });
       if (error) throw error;
       return data;
+    },
+
+    /** Phoenix-metro cities a listing can be placed in. Reference data; rarely changes. */
+    async getServiceAreas(): Promise<ServiceArea[]> {
+      const { data, error } = await supabase
+        .from('service_areas')
+        .select('*')
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data as ServiceArea[];
     },
 
     async getProjectTypes(): Promise<ProjectType[]> {

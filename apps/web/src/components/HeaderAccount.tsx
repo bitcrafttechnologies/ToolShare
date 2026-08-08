@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
+import { Heart, Bug } from 'lucide-react';
 import { useProfile } from '@toolshare/supabase';
 import { Components } from '@toolshare/ui';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -53,6 +53,16 @@ export function HeaderAccount() {
         className="hidden size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-surface-muted hover:text-primary sm:flex"
       >
         <Heart size={18} aria-hidden="true" />
+      </Link>
+      {/* Pilot-only: signed-in testers file bugs from here. Rendered inside the
+          signed-in branch, and /bug-report is in PROTECTED_PATHS too. */}
+      <Link
+        href="/bug-report"
+        aria-label="Report a bug"
+        title="Report a bug"
+        className="hidden size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-surface-muted hover:text-primary sm:flex"
+      >
+        <Bug size={18} aria-hidden="true" />
       </Link>
       <div className="hidden sm:block">
         <BookingsNotifier />
