@@ -1,0 +1,136 @@
+# Changelog
+
+Ticket-by-ticket record of changes from live beta testing. Newest first.
+
+---
+
+## TKT-00003 — New tool listings not appearing in search
+
+**2026-08-08** · Priority: High · Reported by MP, AT, NT · Branch `beta-0.0.1-tkt-00003` · Commit `79552e0`
+
+### Symptom
+
+A newly created listing was visible to its owner (My Listings, the listing's
+own page, Bookings) but never appeared in search for anyone — including the
+owner. Reported as "accessible on the owner's side, marked pending approval;
+when approved is accessible to all users."
+
+### Root cause
+
+Two findings, one of which contradicts the report:
+
+1. **There is no approval or moderation step in the product.** No `status`,
+   `approval_status`, `is_approved` or equivalent column exists on `tools`, and
+   none ever has. The "pending approval" the reporters saw was *booking* status
+   on an unrelated surface. Nothing was ever waiting to be approved, so nothing
+   would ever have released the listing into search.
+
+2. **The real cause was a NULL geography.** `search_tools_nearby` filters on
+   `ST_DWithin(t.location_point, …)`, but nothing in either app ever set
+   `location_point` — the listing form's only location input was a free-text
+   "Address / area" box, and no geocoder or trigger derived a point from it.
+   `ST_DWithin(NULL, …)` evaluates to NULL, which is not TRUE, so every
+   app-created row was silently dropped by the `WHERE` clause. Unlike the
+   query's other three predicates, this one had no `IS NULL OR …` guard.
+
+   The owner-side views that *did* work (`getToolsByOwner`, `getToolById`, the
+   booking join) are all plain table queries with no geo predicate. That
+   asymmetry is the entire bug: "works for the owner, invisible to everyone
+   else" is the signature of "plain query works, RPC doesn't."
+
+Confirmed against the production snapshot: of 31 tool rows, 29 carried a
+geography value. The two exceptions were precisely the two listings created
+through the app UI. Every searchable row came from `seed.sql`, which hand-writes
+`ST_MakePoint` per tool.
+
+A contributing factor: both the home and search pages wrapped their queries in
+`.catch(() => [])`, so an RPC failure and a genuinely empty result rendered the
+identical "No tools matched" state. That is a large part of why this survived
+live testing — the page looked calm and simply reported no results.
+
+### Changes
+
+**Database** — `supabase/migrations/0017_tool_location.sql` (new)
+
+- `service_areas` lookup table: 20 Phoenix-metro cities (Buckeye → Apache
+  Junction, Florence → North Phoenix/Surprise) with centroid coordinates. The
+  first eleven reuse the exact values `seed.sql` already used, so seeded and
+  user-created listings in the same city land on the same point.
+- `tools.service_area_slug` — an FK the trigger resolves exactly, rather than
+  parsing free text back out of `address_display`.
+- `set_tool_location()` — `BEFORE INSERT OR UPDATE` trigger resolving
+  `location_point` in three tiers: from the chosen service area; failing that,
+  by matching legacy free-text `address_display` against known city names;
+  failing that, Phoenix metro center. A coarse point is wrong by a few miles, a
+  NULL point is invisible — the fallback guarantees a listing can never again
+  disappear.
+- Backfill of every existing `location_point IS NULL` row, including the two
+  live listings that prompted the ticket.
+- `search_tools_nearby` replaced, with two changes: a `location_point IS NULL OR`
+  guard so a missing point can never again silently unpublish a listing, and
+  `created_at DESC` added to the ordering — a brand-new listing has rating 0 and
+  sorted behind every rated tool, which would have made the fix look ineffective.
+  `search_path` pinning from migration 0015 re-applied (`CREATE OR REPLACE`
+  resets function attributes).
+
+**Listing form** — `apps/web/src/components/ToolForm.tsx`
+
+- The free-text "Address / area" input is now a required **City** picker backed
+  by `service_areas`. `address_display` is derived from the selection, so a
+  listing can no longer display one city while being searchable in another.
+- Location is city-level by design: only the city is shown publicly, never a
+  street address.
+
+**Shared packages**
+
+- `ServiceArea` type; `service_area_slug` added to `Tool` and `CreateToolInput`
+  (the latter previously made it impossible to type a location through at all).
+- `getServiceAreas()` repository method, `toolKeys.serviceAreas()` key, and the
+  `useServiceAreas` hook.
+
+**Error visibility** — `apps/web/src/lib/loadTools.ts` (new)
+
+- Replaces `.catch(() => [])` on the home and search pages. A failed query now
+  logs server-side and renders a distinct "we couldn't load listings" message
+  instead of masquerading as an empty result. Still degrades rather than
+  throwing — one bad query shouldn't 500 the home page.
+
+### Also fixed (pre-existing, outside the ticket)
+
+Local sign-in was broken for all five demo accounts. `seed.sql` and
+`scripts/supabase/sanitize-local.sql` inserted `auth.users` rows leaving
+`confirmation_token`, `recovery_token`, `email_change_token_new` and
+`email_change` NULL. Those columns are nullable with no default, but GoTrue
+scans them into Go strings, so every login failed with a 500 —
+`Database error querying schema` / `converting NULL to string is unsupported`.
+Both files now write `''`. This was blocking any end-to-end test that signs in.
+
+### Verification
+
+- `pnpm typecheck` — clean across all 7 packages.
+- `apps/web` unit suite — 30/30 passing, including 3 new `ToolForm` tests
+  (`ToolForm.test.tsx`) covering the submitted service area, the derived city
+  label, refusal to submit with no city, and preselection when editing.
+- `packages/domain` — 21/21 passing (pricing and availability rules unchanged).
+- `e2e/tkt-00003-search-visibility.spec.ts` (new) — creates a listing through
+  the real form and asserts it appears in `/search`. This is the only test that
+  exercises the RPC, and therefore the only one that covers the reported bug.
+- Direct database probe — an app-shaped insert with no `location_point`, and a
+  legacy free-text-only row, both resolve a point and return from
+  `search_tools_nearby`.
+
+### Notes for local runs
+
+- E2E requires `E2E_OWNER_PASSWORD=localdev123`; the specs' default is the
+  production demo password.
+- `e2e/self-booking.spec.ts` needs `E2E_OWNED_TOOL_ID` set to a local tool id —
+  its default is a production UUID that does not survive `supabase db reset`.
+- `e2e/invite-signup.spec.ts` cannot pass locally: it needs `check_invite_code`,
+  which migration 0016 deliberately omits from the local schema. Addressed under
+  TKT-00002.
+
+### Follow-up (not in scope)
+
+`apps/mobile/app/tools/new.tsx` sends no location and hardcodes `category_id: 1`.
+The new trigger's fallback makes mobile-created listings searchable, but they
+will all land on metro center until the picker is added there too.
