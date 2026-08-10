@@ -201,7 +201,12 @@ export function ToolForm({ userId, initial, submitLabel, onSubmit }: Props) {
           </div>
         ) : null}
 
-        <ToolPhotoPicker files={newPhotos} onChange={setNewPhotos} disabled={saving} />
+        <ToolPhotoPicker
+          files={newPhotos}
+          onChange={setNewPhotos}
+          disabled={saving}
+          existingCount={existingPhotos.length}
+        />
       </section>
 
       <Separator />

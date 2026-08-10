@@ -8,6 +8,8 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useSessionUser } from '@/hooks/useSessionUser';
 import { ToolForm, type ToolFormValues } from '@/components/ToolForm';
 import { BlackoutManager } from '@/components/BlackoutManager';
+import { deleteToolPhotos } from '@/components/ToolPhotoPicker';
+import { revalidateTool } from '@/app/tools/[id]/actions';
 
 const { Spinner, EmptyState, Separator } = Components;
 
@@ -70,10 +72,21 @@ export function EditTool({ toolId }: Props) {
     );
   }
 
+  const ownerId = user.id;
+  const savedPhotos = tool.photo_urls;
+
   async function handleSubmit(values: ToolFormValues) {
     await updateTool.mutateAsync({ id: toolId, updates: values });
+
+    // Drop the prerendered listing page. Without this the owner lands back on
+    // up-to-an-hour-old HTML still showing the photos they just removed —
+    // the database was always right, the cached page wasn't (TKT-00004).
+    await revalidateTool(toolId);
+
+    const removed = savedPhotos.filter((url) => !values.photo_urls.includes(url));
+    await deleteToolPhotos(supabase, ownerId, removed);
+
     router.push(`/tools/${toolId}`);
-    router.refresh();
   }
 
   return (

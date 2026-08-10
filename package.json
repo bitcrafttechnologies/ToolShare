@@ -20,6 +20,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "test:e2e": "playwright test",
+    "test:e2e:prod": "PLAYWRIGHT_PROD=1 playwright test",
     "test:e2e:ui": "playwright test --ui",
     "db:start": "dockerd && supabase start",
     "db:link": "bash scripts/supabase/link-prod.sh",

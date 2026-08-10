@@ -24,9 +24,16 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
     : {
-        command: 'pnpm --filter @toolshare/web dev',
+        // `next dev` renders every request fresh — it applies neither
+        // prerendering nor `export const revalidate`. Specs that assert on
+        // caching behaviour (e2e/tkt-00004-photo-edit.spec.ts) therefore pass
+        // against dev whether or not the bug is present, so run those with
+        // PLAYWRIGHT_PROD=1 (`pnpm test:e2e:prod`), which builds first.
+        command: process.env.PLAYWRIGHT_PROD
+          ? 'pnpm --filter @toolshare/web build && pnpm --filter @toolshare/web start'
+          : 'pnpm --filter @toolshare/web dev',
         url: 'http://localhost:3000',
         reuseExistingServer: !process.env.CI,
-        timeout: 120_000,
+        timeout: 180_000,
       },
 });

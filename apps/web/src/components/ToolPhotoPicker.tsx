@@ -14,6 +14,12 @@ interface Props {
   files: File[];
   onChange: (files: File[]) => void;
   disabled?: boolean;
+  /**
+   * Photos already saved on the listing. They count toward MAX_FILES too —
+   * without this the cap only saw newly picked files, so editing a listing
+   * that already had 6 photos let you add 6 more.
+   */
+  existingCount?: number;
 }
 
 /**
@@ -21,7 +27,7 @@ interface Props {
  * the submit handler can upload them; previews are object URLs created and
  * revoked here. The first photo is the listing's cover.
  */
-export function ToolPhotoPicker({ files, onChange, disabled }: Props) {
+export function ToolPhotoPicker({ files, onChange, disabled, existingCount = 0 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +53,7 @@ export function ToolPhotoPicker({ files, onChange, disabled }: Props) {
       }
     }
 
-    const room = MAX_FILES - files.length;
+    const room = MAX_FILES - existingCount - files.length;
     const next = [...files, ...accepted.slice(0, Math.max(0, room))];
     if (accepted.length > room) rejected.push(`Up to ${MAX_FILES} photos`);
 
@@ -89,7 +95,7 @@ export function ToolPhotoPicker({ files, onChange, disabled }: Props) {
           </div>
         ))}
 
-        {files.length < MAX_FILES ? (
+        {existingCount + files.length < MAX_FILES ? (
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
@@ -146,4 +152,43 @@ export async function uploadToolPhotos(
   }
 
   return urls;
+}
+
+/** Public URL prefix Supabase Storage serves the `tools` bucket from. */
+const PUBLIC_PREFIX = '/storage/v1/object/public/tools/';
+
+/**
+ * Deletes photos that an edit removed from a listing.
+ *
+ * Nothing used to clean these up, so every removed photo stayed in the bucket
+ * and its public URL kept returning 200 — which is part of why the stale
+ * cached listing page in TKT-00004 looked perfectly intact instead of showing
+ * broken images.
+ *
+ * Deliberately scoped to the signing user's own `tools/<userId>/` prefix.
+ * `photo_urls` is owner-written data, and turning an arbitrary string back
+ * into a storage key is exactly the sort of thing that should not be able to
+ * reach another owner's objects.
+ */
+export async function deleteToolPhotos(
+  supabase: import('@supabase/supabase-js').SupabaseClient,
+  userId: string,
+  urls: string[],
+): Promise<void> {
+  const ownPrefix = `tools/${userId}/`;
+
+  const keys = urls.flatMap((url) => {
+    const at = url.indexOf(PUBLIC_PREFIX);
+    if (at === -1) return [];
+    const key = decodeURIComponent(url.slice(at + PUBLIC_PREFIX.length));
+    return key.startsWith(ownPrefix) ? [key] : [];
+  });
+
+  if (keys.length === 0) return;
+
+  const { error } = await supabase.storage.from('tools').remove(keys);
+  // Best-effort. The listing has already saved correctly at this point; an
+  // orphaned file is wasted storage, not a broken listing, and it must not
+  // surface as a failure the owner has to act on.
+  if (error) console.error('[toolshare] could not remove replaced photos:', error);
 }

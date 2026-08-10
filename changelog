@@ -4,6 +4,116 @@ Ticket-by-ticket record of changes from live beta testing. Newest first.
 
 ---
 
+## TKT-00004 — Editing a listing kept the old photos
+
+**2026-08-08** · Priority: Medium · Reported by David Teply · Branch `beta-0.0.1-tkt-00004`
+
+### Symptom
+
+"I uploaded an AI photo of myself, then a photo of the chainsaw, then I went to
+edit it, removed my photo and added another photo of the chainsaw but it kept
+the old photos."
+
+### Root cause
+
+**This was never a data bug.** The form has always sent the complete
+replacement array, and the repository does a full column overwrite — the
+database was correct the whole time, immediately.
+
+What was stale was the *rendered page*. `/tools/[id]` is prerendered with
+`export const revalidate = 3600` for SEO, and `revalidatePath` appeared nowhere
+in the codebase. After saving, the owner is redirected straight back to that
+listing and was served up-to-an-hour-old HTML still showing the photos they had
+just removed. `router.refresh()` could not help: it clears the client Router
+Cache, while the stale HTML lives in the server's Full Route Cache, which only
+`revalidatePath` reaches.
+
+Two things made it look more convincingly like a data bug than it was:
+
+- Removed photos were never deleted from Storage, so their public URLs kept
+  returning 200. The stale page rendered perfectly instead of showing broken
+  images.
+- `router.push()` and `router.refresh()` fired back to back without awaiting
+  the navigation, so the refresh could land on the outgoing route.
+
+### Changes
+
+- **`apps/web/src/app/tools/[id]/actions.ts`** (new) — `revalidateTool(id)`
+  server action calling `revalidatePath`. The first server action in the
+  codebase. Only the detail route needs it; every other tool surface (`/`,
+  `/search`, `/my-listings`) reads cookies or runs client-side and so was never
+  statically cached.
+- **`EditTool.tsx`** — awaits the save, revalidates the listing page, then
+  navigates. The redundant `router.refresh()` is gone.
+- **`ToolPhotoPicker.tsx`** — new `deleteToolPhotos()` removes photos an edit
+  dropped, scoped strictly to the signing user's own `tools/<userId>/` prefix.
+  Best-effort: the listing has already saved by then, so an orphaned file is
+  wasted storage, not a failure the owner should have to act on.
+- **`ToolPhotoPicker.tsx`** — the six-photo cap counted only newly picked
+  files, so editing a listing that already had six photos accepted six more.
+  It now takes `existingCount` and counts both.
+
+### Correction to TKT-00003 — `supabase/migrations/0018_backfill_service_area_slug.sql`
+
+Found by this ticket's end-to-end test, which edits a seeded listing.
+
+Migration 0017 backfilled `location_point` but not `service_area_slug`: its
+legacy branch only ran when `location_point IS NULL`, and every seeded listing
+already had a point. All 29 pre-existing listings kept a NULL slug. Once the
+form made City required, that left **every pre-existing listing un-editable** —
+the select rendered empty, native validation blocked submit, and no error was
+shown. Any edit to an existing listing would have failed silently in
+production.
+
+0018 backfills the slug by proximity to the nearest service area (verified to
+agree exactly with each listing's stated city) and revises the trigger to
+derive a slug whenever a row has a point but no area, so legacy rows heal on
+any write.
+
+### Verification
+
+The important part of this ticket. `next dev` applies neither prerendering nor
+`revalidate`, so an end-to-end test against the default dev server **passes
+whether or not the fix is present**. Confirmed by removing `revalidateTool` and
+running all four combinations:
+
+| Environment | Fix | Result |
+|---|---|---|
+| production build | disabled | **fails** — old photo still rendered, reproducing the report |
+| production build | enabled | passes |
+| `next dev` | disabled | passes (vacuous) |
+| `next dev` | enabled | passes (vacuous) |
+
+So the spec is only meaningful against a production build. Added
+`pnpm test:e2e:prod` (`PLAYWRIGHT_PROD=1`), which builds and serves before
+running; the default `pnpm test:e2e` still uses the dev server for the other
+specs. The requirement is documented at the top of the spec itself.
+
+- `pnpm typecheck` — clean across all 7 packages.
+- `apps/web` unit — 34/36. New: 3 `ToolPhotoPicker` tests for the cap, 3
+  `ToolForm` tests for photo replacement ordering and `existingCount`
+  plumbing. (The 2 failures are pre-existing — see below.)
+- `packages/domain` — 21/21.
+- Full end-to-end suite against a production build — 11/12.
+
+### Pre-existing failures, untouched by this ticket
+
+- `BugReportForm.test.tsx` — 2 tests expect a severity emoji (`🟡 Medium`) in
+  the subject; the component emits `🐛 Toolshare bug report — Medium`. The
+  component and its test were committed out of sync in `79552e0`. Not fixed
+  here; needs a decision on which side is right.
+- `e2e/invite-signup.spec.ts` — needs `check_invite_code`, which migration 0016
+  deliberately omits locally. Addressed under TKT-00002.
+
+### Notes for local runs
+
+`e2e/tkt-00004-photo-edit.spec.ts` signs in as `elena.rodriguez`, not
+`mike.harrison`, on purpose: the suite runs `fullyParallel`, and the TKT-00003
+spec creates listings as Mike. Sharing one owner between the two made this test
+flake when the full suite ran.
+
+---
+
 ## TKT-00003 — New tool listings not appearing in search
 
 **2026-08-08** · Priority: High · Reported by MP, AT, NT · Branch `beta-0.0.1-tkt-00003` · Commit `79552e0`
