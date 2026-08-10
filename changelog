@@ -4,6 +4,98 @@ Ticket-by-ticket record of changes from live beta testing. Newest first.
 
 ---
 
+## TKT-00005 — Mobile navigation only showed account and messages
+
+**2026-08-08** · Priority: Medium · Reported by Nathaniel Tucker · Branch `bet-0.0.1-tkt-00005`
+
+### Symptom
+
+"Navigation Bar in mobile only shows the account and message links in vertical
+positions." Bookings, adding a tool, messages and the bug report were all
+expected to be reachable.
+
+### Root cause
+
+Straightforward, and exactly as reported. The header hid its three nav links
+below `md` (`hidden md:flex`) and Favorites / Bug report / Bookings below `sm`
+(`hidden sm:flex`). Below 640px that left a signed-in user with precisely two
+things: the Messages icon and their avatar.
+
+There was **no hamburger, drawer, sheet or bottom bar anywhere in the web app** —
+no `Menu` icon import, no mobile nav component. The `md:`-hidden links were
+simply unreachable on a phone. The only escape hatch was the footer, which
+carries "Lend a tool" but no Bookings, Messages or Bug report.
+
+The design system had already anticipated this: `packages/ui`'s `TabBar`
+documents itself as the mobile counterpart to `Navbar`, complete with
+safe-area insets and badge support. `SiteHeader` just never used it.
+
+### Changes
+
+A single breakpoint (`md`) now governs the whole navigation, so every
+destination is reachable from exactly one place at any width.
+
+- **`apps/web/src/components/MobileTabBar.tsx`** (new) — bottom tab bar,
+  `md:hidden`. Signed in: Home · Browse · Lend · Bookings · Messages, with the
+  same live pending-request and unread-message badges the desktop header shows,
+  driven by the same realtime subscriptions. Signed out: Home · Browse · How it
+  works · Sign in. Mirrors the Expo app's tab bar so both platforms navigate
+  alike.
+- **`packages/ui/src/navigation/tab-bar.tsx`** — `TabBarItem` gained an `as`
+  prop so it can render `next/link` and keep navigation client-side.
+  `legacyBehavior` is gone in Next 16, so this was the clean route.
+- **`HeaderAccount.tsx`** — Favorites, Bookings and Messages moved from `sm:`
+  to `md:`, matching the tab bar's `md:hidden`. At `sm` the two would otherwise
+  have overlapped and rendered every destination twice. Bug report lost its
+  responsive gate entirely: it has no tab, and phone testers are exactly who
+  needs it.
+- **`app/layout.tsx`** — renders the tab bar and pads the body by
+  `calc(4rem + env(safe-area-inset-bottom))` below `md` so the fixed bar cannot
+  cover the footer.
+
+`ToolBookingPanel`'s sticky CTA is `sticky top-24`, not bottom-fixed, so there
+is no collision with the new bar.
+
+### Bug found by the new test — `packages/ui/src/components/toast.tsx`
+
+The toast viewport is `fixed inset-x-0 bottom-0 z-[60]` and had no
+`pointer-events-none`. Empty or not, it spanned the full width at the bottom of
+the screen above everything else, so it **swallowed every click aimed at the
+tab bar** — the bar rendered correctly and was completely untappable on a
+phone. Caught by the "tapping a tab actually navigates" end-to-end test, which
+timed out with the toast container reported as intercepting pointer events.
+
+The container is now `pointer-events-none` and individual toasts opt back in
+with `pointer-events-auto`. This also affected anything else that might sit at
+the bottom of the viewport, so it was a latent bug, not one this ticket
+introduced.
+
+### Verification
+
+- `pnpm typecheck` — clean across all 7 packages.
+- `apps/web` unit — 40/42. New: 4 `MobileTabBar` tests (destinations per auth
+  state, badges, active-section matching including nested routes) and 2
+  `HeaderAccount` tests. The pre-existing `HeaderAccount` tests asserted link
+  *ordering* only, which is precisely why a responsive-visibility regression
+  was invisible to the suite; the new ones assert the breakpoint classes.
+- `packages/domain` — 21/21.
+- `e2e/tkt-00005-mobile-nav.spec.ts` (new) — 5 tests at a 390×844 viewport:
+  every requested destination reachable, tabs actually navigate, signed-out
+  variant, the bar does not cover the footer, and at desktop width the bar
+  gives way to the header so nothing is offered twice. Viewport is set with
+  `test.use` per describe-block rather than by adding a Playwright project, so
+  the rest of the suite still runs once at desktop size.
+- Full end-to-end suite against a production build — 16/17 (the one failure is
+  the pre-existing `invite-signup` spec).
+
+### Still desktop-only
+
+Favorites (`/favorites`) has no tab and remains `md:`-gated. That was already
+true before this ticket and is outside what was reported; worth a decision
+later on whether it belongs in the tab bar or on the profile page.
+
+---
+
 ## TKT-00004 — Editing a listing kept the old photos
 
 **2026-08-08** · Priority: Medium · Reported by David Teply · Branch `beta-0.0.1-tkt-00004`

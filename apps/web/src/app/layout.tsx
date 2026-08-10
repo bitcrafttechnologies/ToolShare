@@ -6,6 +6,7 @@ import { Outfit, Inter } from "next/font/google";
 import './globals.css';
 import { Providers } from './providers';
 import { SiteFooter } from '@/components/SiteFooter';
+import { MobileTabBar } from '@/components/MobileTabBar';
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -50,10 +51,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         cap. Containers nested inside a <main> aren't flex items and are
         unaffected.
       */}
-      <body className="min-h-full flex flex-col bg-background text-foreground font-body">
+      {/*
+        The bottom padding clears <MobileTabBar>, which is position:fixed and
+        would otherwise sit on top of the footer on phones. Dropped at `md`,
+        where the tab bar is hidden and the header carries navigation instead.
+      */}
+      <body className="min-h-full flex flex-col bg-background text-foreground font-body pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         <Providers>
           {children}
           <SiteFooter />
+          <MobileTabBar />
         </Providers>
       </body>
     </html>

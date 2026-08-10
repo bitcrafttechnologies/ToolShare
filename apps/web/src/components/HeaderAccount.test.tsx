@@ -38,4 +38,35 @@ describe('HeaderAccount', () => {
     expect(screen.queryByRole('link', { name: 'Report a bug' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /get started/i })).toBeInTheDocument();
   });
+
+  // TKT-00005: the bug report link is the one header action with no mobile
+  // counterpart in <MobileTabBar>, so it must not be gated behind a
+  // breakpoint. It used to be `hidden sm:flex`, which put it out of reach for
+  // exactly the phone testers meant to file bugs. The existing tests above
+  // assert ordering only, which is why that was invisible to the suite.
+  it('keeps the bug report link reachable at phone widths', () => {
+    mockUser.current = { id: 'u1' };
+    render(<HeaderAccount />);
+
+    expect(screen.getByRole('link', { name: 'Report a bug' }).className).not.toMatch(/\bhidden\b/);
+  });
+
+  // TKT-00005: everything the tab bar also carries has to be hidden below
+  // `md`, or those destinations render twice on a phone.
+  it('defers its duplicated destinations to the tab bar below md', () => {
+    mockUser.current = { id: 'u1' };
+    render(<HeaderAccount />);
+
+    const favorites = screen.getByRole('link', { name: 'Saved tools' });
+    expect(favorites.className).toMatch(/\bhidden\b/);
+    expect(favorites.className).toMatch(/\bmd:flex\b/);
+
+    // Messages and Bookings are wrapped rather than styled directly.
+    expect(screen.getByRole('link', { name: 'Messages' }).closest('div')?.className).toMatch(
+      /\bhidden\b.*\bmd:block\b/,
+    );
+    expect(screen.getByRole('link', { name: 'Bookings' }).closest('div')?.className).toMatch(
+      /\bhidden\b.*\bmd:block\b/,
+    );
+  });
 });

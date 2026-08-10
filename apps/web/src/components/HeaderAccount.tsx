@@ -32,7 +32,10 @@ export function HeaderAccount() {
   if (user === null) {
     return (
       <div className="flex items-center gap-2">
-        <Link href="/login" className="hidden sm:block">
+        {/* `md`, not `sm`: below that the tab bar carries Sign in, and at `sm`
+            the two overlapped. "Get started" stays visible at every width —
+            it's the primary call to action. */}
+        <Link href="/login" className="hidden md:block">
           <Button variant="ghost" size="sm">
             Sign in
           </Button>
@@ -46,25 +49,32 @@ export function HeaderAccount() {
 
   return (
     <div className="flex items-center gap-1">
-      <MessagesNotifier />
+      {/* Below `md` these three live in <MobileTabBar> instead, so each
+          destination is reachable from exactly one place at any width
+          (TKT-00005). The breakpoint has to match SiteHeader's nav and the tab
+          bar's `md:hidden` — at `sm` they overlapped and rendered twice. */}
+      <div className="hidden md:block">
+        <MessagesNotifier />
+      </div>
       <Link
         href="/favorites"
         aria-label="Saved tools"
-        className="hidden size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-surface-muted hover:text-primary sm:flex"
+        className="hidden size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-surface-muted hover:text-primary md:flex"
       >
         <Heart size={18} aria-hidden="true" />
       </Link>
-      {/* Pilot-only: signed-in testers file bugs from here. Rendered inside the
-          signed-in branch, and /bug-report is in PROTECTED_PATHS too. */}
+      {/* Pilot-only: signed-in testers file bugs from here. Deliberately has no
+          responsive gate — it is not in the tab bar, and testers on phones are
+          exactly who needs to file bugs. */}
       <Link
         href="/bug-report"
         aria-label="Report a bug"
         title="Report a bug"
-        className="hidden size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-surface-muted hover:text-primary sm:flex"
+        className="flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-surface-muted hover:text-primary"
       >
         <Bug size={18} aria-hidden="true" />
       </Link>
-      <div className="hidden sm:block">
+      <div className="hidden md:block">
         <BookingsNotifier />
       </div>
       <Link

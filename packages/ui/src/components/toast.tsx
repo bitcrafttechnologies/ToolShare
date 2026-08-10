@@ -60,7 +60,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {mounted &&
         createPortal(
           <div
-            className="fixed inset-x-0 bottom-0 z-[60] flex flex-col items-center gap-2 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-end"
+            // pointer-events-none is load-bearing: this viewport spans the
+            // full width at the bottom of the screen and sits above everything
+            // (z-60), so while empty it still swallowed clicks meant for
+            // whatever is underneath — on phones that was the whole bottom tab
+            // bar, which became untappable. Toasts themselves opt back in.
+            className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-center gap-2 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-end"
             aria-live="polite"
             aria-atomic="true"
           >
@@ -69,7 +74,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 key={t.id}
                 role="status"
                 className={cn(
-                  "w-full max-w-sm rounded-md px-4 py-3 shadow-lg",
+                  "pointer-events-auto w-full max-w-sm rounded-md px-4 py-3 shadow-lg",
                   variantStyles[t.variant]
                 )}
               >
