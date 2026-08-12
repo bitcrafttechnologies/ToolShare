@@ -29,13 +29,18 @@ export function createServerSupabaseClient() {
         async getAll() {
           return (await cookieStore).getAll();
         },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(async ({ name, value, options }) =>
-              (await cookieStore).set(name, value, options),
-            );
-          } catch {
-            // setAll called from a Server Component — cookies set by middleware already
+        // Awaited by @supabase/ssr, so the writes are guaranteed to land
+        // before the response is built. An `async` callback passed to
+        // `forEach` would not be: it drops its promises, and the try/catch
+        // below could never see the Server Component rejection it exists for.
+        async setAll(cookiesToSet) {
+          const store = await cookieStore;
+          for (const { name, value, options } of cookiesToSet) {
+            try {
+              store.set(name, value, options);
+            } catch {
+              // setAll called from a Server Component — cookies set by middleware already
+            }
           }
         },
       },

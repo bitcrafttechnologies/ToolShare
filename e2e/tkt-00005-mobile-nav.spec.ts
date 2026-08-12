@@ -20,7 +20,7 @@ async function signIn(page: import('@playwright/test').Page) {
   await page.goto('/login');
   await page.getByLabel('Email').fill(OWNER_EMAIL);
   await page.getByLabel('Password').fill(OWNER_PASSWORD);
-  await page.getByRole('button', { name: /sign in/i }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.waitForURL('**/', { timeout: 15_000 });
 }
 

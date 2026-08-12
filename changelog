@@ -4,6 +4,121 @@ Ticket-by-ticket record of changes from live beta testing. Newest first.
 
 ---
 
+## TKT-00002 — Easy pass signup (Google)
+
+**2026-08-08** · Priority: Medium · Suggested by Adrian Teply · Branch `beta-0.0.1-tkt-00002`
+
+### What was actually in the way
+
+Not the OAuth wiring. `/api/auth/callback` was already provider-agnostic — it
+exchanges any `?code=` for a session and honours `?next=` — so Google needed no
+new endpoint at all.
+
+The obstacle was the **pilot gate**. Production gates `auth.users` inserts with
+`enforce_invite_code()`, which reads `raw_user_meta_data->>'invite_code'`. A
+Google signup carries Google's claims (`email`, `name`, `picture`, `sub`) and no
+invite code, and `signInWithOAuth` has no `data:` option to smuggle one through
+the way `signUp` does. A naive implementation would therefore have **worked
+locally and failed in production** with a raw "Database error saving new user",
+because migration 0016 deliberately omits that trigger from the local schema.
+
+### Changes
+
+**`supabase/migrations/0019_google_signup_allowlist.sql`** (new)
+
+- `approved_emails` table — allowlist fed from the waiting list. RLS on with no
+  policies, same shape as `invite_codes`, reachable only through
+  `SECURITY DEFINER` functions. A `CHECK (email = lower(email))` keeps the key
+  from holding two casings of one address.
+- `enforce_invite_code()` replaced: a signup is accepted when its address is on
+  the allowlist, otherwise the existing invite-code path runs unchanged. The
+  trigger itself is still **not** created locally, for the reason 0016
+  documents — attaching it would reject the demo rows `seed.sql` inserts.
+- `check_invite_code()` added to the local schema. It was production-only,
+  which made the registration form's pre-check throw instead of returning
+  false, and meant `e2e/invite-signup.spec.ts` **could never pass locally**.
+  It is read-only and gates nothing, so unlike the trigger there was no reason
+  to keep it out.
+- `handle_new_user()` extended: `display_name` now falls back through
+  `full_name` → `name` → email local-part, and `avatar_url` picks up Google's
+  `picture`. Without this every Google user would land as "jane.doe" with no
+  avatar.
+
+**App**
+
+- `GoogleButton.tsx` (new) — `signInWithOAuth` pointed at the existing PKCE
+  callback, preserving `next`. Inline SVG mark so the strict CSP needs no
+  remote asset. Rendered on both `/login` and `/register`, above the email
+  form, with the invite-code path still intact beneath it.
+- `api/auth/callback/route.ts` — distinguishes *why* an exchange failed. A
+  signup the gate rejected now redirects to `?error=not_approved`, and a
+  dismissed consent screen to `?error=cancelled`, instead of both reading as
+  "Authentication failed".
+- `login/page.tsx` — renders those two states: non-approved testers are pointed
+  at the waiting list rather than told the site is broken.
+- `supabase/config.toml` — `[auth.external.google]` block (disabled by
+  default), plus `http://localhost:3000` added to `additional_redirect_urls`.
+  Both entries were `127.0.0.1` only, while `next dev` and Playwright serve on
+  `localhost`, and OAuth redirect matching is exact.
+- `.env.example` / `CLAUDE.md` — the two Google env vars, the authorised
+  redirect URI to register with Google, and how to allowlist a tester.
+
+### Verification
+
+The gate is the part that can't be checked by running the app locally, since
+the trigger isn't attached there. Verified instead by attaching it inside a
+transaction and exercising every path:
+
+| Scenario | Result |
+|---|---|
+| Google, allowlisted, no invite code | allowed |
+| Google, **not** allowlisted, no code | rejected — "An invite code is required" |
+| Allowlist match is case-insensitive | allowed |
+| Email+password with a valid code | allowed |
+| Email+password with a bad code | rejected — "Invalid or expired invite code" |
+
+The Google case also produced a profile named **"Jane Doe"** with an avatar,
+confirming the `handle_new_user()` change.
+
+- `pnpm typecheck` — clean across all 7 packages.
+- `apps/web` unit — 51/53. New: 4 `GoogleButton` tests (provider, callback URL,
+  preserved `next`, error surfacing) and 7 callback-route tests covering each
+  redirect branch. The route test needs `// @vitest-environment node`; the
+  shared config is jsdom.
+- `packages/domain` — 21/21.
+- **Full end-to-end suite against a production build — 21/21, green for the
+  first time this session.** `e2e/invite-signup.spec.ts` had been failing since
+  before this batch of tickets and now passes.
+
+### Scope note
+
+The OAuth handshake itself is not automated — it leaves the app for Google's
+consent screen and needs real credentials and a real account. What the button
+hands Supabase, and how the callback branches, are covered by unit tests; the
+end-to-end spec covers the entry points rendering and the rejection messaging.
+
+### Regression this caused, and the fix
+
+Labelling the button "Sign in with Google" broke the `signIn` helper in four
+existing specs, whose `getByRole('button', { name: /sign in/i })` then matched
+two buttons. The label is now "Continue with Google" (also the conventional
+wording), and every spec's selector was tightened to
+`{ name: 'Sign in', exact: true }` so another button mentioning "sign in"
+cannot break them again.
+
+### Before this ships
+
+1. Create the OAuth client in Google Cloud; authorised redirect URI is
+   `https://<project-ref>.supabase.co/auth/v1/callback`.
+2. Enable Google in the hosted Supabase dashboard — production does not read
+   `config.toml`.
+3. Add the production site URL to the redirect allow-list.
+4. Populate `approved_emails`. It is currently seeded with one address
+   (`tucker@bitcrafttech.com`); every other tester needs adding, or Google
+   sign-in will reject them.
+
+---
+
 ## TKT-00005 — Mobile navigation only showed account and messages
 
 **2026-08-08** · Priority: Medium · Reported by Nathaniel Tucker · Branch `bet-0.0.1-tkt-00005`

@@ -26,7 +26,12 @@ export async function middleware(request: NextRequest) {
     process.env.NODE_ENV === 'production' &&
     request.nextUrl.pathname.startsWith('/test')
   ) {
-    return NextResponse.redirect(new URL('/', request.url));
+    // Cloned from nextUrl rather than built from request.url: behind Cloud Run
+    // the latter carries the container's bind address, not the public origin.
+    const homeUrl = request.nextUrl.clone();
+    homeUrl.pathname = '/';
+    homeUrl.search = '';
+    return NextResponse.redirect(homeUrl);
   }
 
   let supabaseResponse = NextResponse.next({ request });

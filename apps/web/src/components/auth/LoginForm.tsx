@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Components } from '@toolshare/ui';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { GoogleButton, AuthDivider } from '@/components/auth/GoogleButton';
 
 const { Button, FormField, Input, Alert } = Components;
 
@@ -37,7 +38,14 @@ export function LoginForm({ next = '/' }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
+      {/* "Continue with", not "Sign in with": the label must not collide with
+          the form's own "Sign in" submit button, for screen-reader users
+          picking from a list of controls as much as for tests. */}
+      <GoogleButton next={next} />
+      <AuthDivider />
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <FormField label="Email" required>
         <Input
           type="email"
@@ -72,6 +80,7 @@ export function LoginForm({ next = '/' }: Props) {
       <Button type="submit" size="lg" isLoading={loading} className="w-full">
         {loading ? 'Signing in…' : 'Sign in'}
       </Button>
-    </form>
+      </form>
+    </div>
   );
 }

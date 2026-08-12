@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Components } from '@toolshare/ui';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { GoogleButton, AuthDivider } from '@/components/auth/GoogleButton';
 
 const { Button, FormField, Input, Alert } = Components;
 
@@ -63,7 +64,14 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
+      <GoogleButton label="Sign up with Google" />
+      <p className="-mt-2 text-sm text-muted-foreground">
+        Works if we&apos;ve already approved your email — otherwise use your invite code below.
+      </p>
+      <AuthDivider />
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <FormField
         label="Invite code"
         required
@@ -122,6 +130,7 @@ export function RegisterForm() {
       <Button type="submit" size="lg" isLoading={loading} className="w-full">
         {loading ? 'Creating account…' : 'Create account'}
       </Button>
-    </form>
+      </form>
+    </div>
   );
 }

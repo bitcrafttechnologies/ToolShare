@@ -30,7 +30,19 @@ export default async function LoginPage({ searchParams }: Props) {
         <h1 className="font-heading text-2xl font-bold">Welcome back</h1>
         <p className="mt-1 text-sm text-muted-foreground">Sign in to your Toolshare account</p>
 
-        {error ? (
+        {error === 'not_approved' ? (
+          // The signup gate rejected the account. For a Google sign-in this is
+          // the expected outcome for anyone not yet on the pilot, so say so
+          // rather than reporting a generic failure (TKT-00002).
+          <Alert variant="warning" className="mt-6">
+            That Google account isn&apos;t on the pilot yet. Join the waiting list below, or sign
+            up with the invite code you were given.
+          </Alert>
+        ) : error === 'cancelled' ? (
+          <Alert variant="info" className="mt-6">
+            Google sign-in was cancelled. You can try again or sign in with your email.
+          </Alert>
+        ) : error ? (
           <Alert variant="danger" className="mt-6">
             Authentication failed. Please try again.
           </Alert>
