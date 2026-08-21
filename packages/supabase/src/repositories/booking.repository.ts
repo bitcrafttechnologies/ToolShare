@@ -68,15 +68,21 @@ export function createBookingRepository(supabase: SupabaseClient) {
       if (error) throw error;
     },
 
-    /** Count of pending requests on the owner's tools — the lender's inbox badge. */
-    async getPendingRequestCount(ownerId: string): Promise<number> {
-      const { count, error } = await supabase
-        .from('bookings')
-        .select('id', { count: 'exact', head: true })
-        .eq('owner_id', ownerId)
-        .eq('booking_status', 'pending');
+    /**
+     * Count of pending requests on the owner's tools — the lender's inbox
+     * badge.
+     *
+     * Backed by get_pending_booking_count() (migration 0020) rather than a
+     * `count: 'exact', head: true` REST query — one of only two places in
+     * the app using that shape, both of which forced a full RLS-evaluated
+     * COUNT(*) on every page load site-wide and were intermittently timing
+     * out as a 503 (TKT-00009; see get_unread_message_count for the other).
+     * The function reads auth.uid() itself, so there's no id to pass here.
+     */
+    async getPendingRequestCount(): Promise<number> {
+      const { data, error } = await supabase.rpc('get_pending_booking_count');
       if (error) throw error;
-      return count ?? 0;
+      return data ?? 0;
     },
 
     /**

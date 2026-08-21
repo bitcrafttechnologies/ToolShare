@@ -72,18 +72,21 @@ export function createMessageRepository(supabase: SupabaseClient) {
     },
 
     /**
-     * Count of unread messages addressed to this user. RLS already limits the
-     * messages table to the user's own bookings, so "unread and not sent by
-     * me" is exactly their unread inbox — no join needed here.
+     * Count of unread messages addressed to the signed-in user.
+     *
+     * Backed by get_unread_message_count() (migration 0020) rather than a
+     * `count: 'exact', head: true` REST query. That shape forces Postgres to
+     * run an unbounded COUNT(*) with RLS evaluated per candidate row — and
+     * this query's own filter never scoped by user at all, leaving that
+     * entirely to messages' SELECT policy, a correlated EXISTS against
+     * bookings checked once per row. Fired on every page site-wide, that was
+     * intermittently timing out as a 503 (TKT-00009). The function reads
+     * auth.uid() itself, so there's no id to pass here.
      */
-    async getUnreadCount(userId: string): Promise<number> {
-      const { count, error } = await supabase
-        .from('messages')
-        .select('id', { count: 'exact', head: true })
-        .eq('is_read', false)
-        .neq('sender_id', userId);
+    async getUnreadCount(): Promise<number> {
+      const { data, error } = await supabase.rpc('get_unread_message_count');
       if (error) throw error;
-      return count ?? 0;
+      return data ?? 0;
     },
 
     /** One row per booking that has any messages: last message + unread count. */

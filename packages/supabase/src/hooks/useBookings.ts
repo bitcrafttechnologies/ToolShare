@@ -45,7 +45,7 @@ export function usePendingRequestCount(supabase: SupabaseClient, ownerId: string
   const repo = createBookingRepository(supabase);
   return useQuery({
     queryKey: bookingKeys.pendingCount(ownerId ?? ''),
-    queryFn: () => repo.getPendingRequestCount(ownerId!),
+    queryFn: () => repo.getPendingRequestCount(),
     enabled: !!ownerId,
     staleTime: 30_000,
   });

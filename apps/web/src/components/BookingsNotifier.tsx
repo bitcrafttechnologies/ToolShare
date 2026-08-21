@@ -20,7 +20,15 @@ export function BookingsNotifier() {
   const supabase = getSupabaseBrowserClient();
   const qc = useQueryClient();
   const user = useSessionUser();
-  const { data: count = 0 } = usePendingRequestCount(supabase, user?.id);
+  const { data: count = 0, isError, error } = usePendingRequestCount(supabase, user?.id);
+
+  // Previously swallowed entirely — a failed count silently read as "no
+  // pending requests" with nothing in the console to say why (TKT-00009).
+  // The badge itself still just omits rather than showing an error state;
+  // it's a background poll, not something worth interrupting the header for.
+  useEffect(() => {
+    if (isError) console.error('[toolshare] pending booking count failed:', error);
+  }, [isError, error]);
 
   useEffect(() => {
     if (!user) return;
