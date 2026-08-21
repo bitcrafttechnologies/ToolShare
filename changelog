@@ -4,6 +4,64 @@ Ticket-by-ticket record of changes from live beta testing. Newest first.
 
 ---
 
+## TKT-00007 — Booking detail photo shows a blank placeholder
+
+**2026-08-13** · Priority: Low · Reported by John Tucker (filed by Claude Cowork) · Branch `beta-0.0.1-tkt0007`
+
+### Symptom
+
+Booked a test rental end-to-end (Makita 18V LXT Cordless Drill), then opened
+the resulting booking detail page. The tool photo shown correctly on the
+listing/search page rendered as a blank gray placeholder on
+`/bookings/[id]`.
+
+### Investigation
+
+Checked the render path against every other place the app shows a booking's
+tool photo. It's identical: `BookingDetail.tsx` reads
+`booking.tool?.photo_urls?.[0]` and falls back to the same placeholder icon
+as `BookingRow.tsx` (the `/bookings` list row) and `ToolCard.tsx` (search
+grid) — same field, same `tool:tools(...)` join in `BOOKING_SELECT`, same
+open `USING (true)` RLS policy on `tools`, same full public-URL values in
+storage. No trigger clears `photo_urls` on booking creation.
+
+The placeholder only renders when that value is empty at render time — this
+was the intended empty state firing, not an image request failing — which
+rules out a query, RLS, or Next/Image config bug and points at the data
+being genuinely absent for that one render.
+
+### Root cause
+
+**Not reproducible from static code review.** No defect found in the render
+path itself. The most plausible explanation is a cold-cache race specific to
+the "Confirm → View booking" flow: `useCreateBooking`'s `onSuccess` handler
+invalidated the renter/owner list queries but never populated the
+booking-detail query, so clicking "View booking" straight off the
+confirmation screen was the one moment guaranteed to hit a brand-new,
+unwarmed fetch instead of already-known data. Nothing proves this was the
+actual cause, but it's the one code path that differs between this report
+and any later, ordinary visit to the same page.
+
+### Changes
+
+**`packages/supabase/src/hooks/useBookings.ts`** — `useCreateBooking`'s
+`onSuccess` now seeds `bookingKeys.detail(id)` with the full booking object
+the insert already returns (it's selected through `BOOKING_SELECT`, so it
+already carries `tool.photo_urls`). "View booking" now renders from that
+seeded data immediately instead of racing a fresh fetch.
+
+### Verification
+
+- `pnpm --filter @toolshare/supabase typecheck` — clean.
+- This was a defensive fix for a report that couldn't be reproduced from
+  source, so there's no failing repro to turn green here. Next live test:
+  confirm the photo appears immediately after "View booking" on a fresh
+  booking; if it still goes blank, escalate as a data issue and check
+  whether `tool.photo_urls` is actually empty in the Supabase response for
+  that specific booking.
+
+---
+
 ## TKT-00002 — Easy pass signup (Google)
 
 **2026-08-08** · Priority: Medium · Suggested by Adrian Teply · Branch `beta-0.0.1-tkt-00002`
