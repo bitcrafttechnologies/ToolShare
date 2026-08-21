@@ -4,6 +4,73 @@ Ticket-by-ticket record of changes from live beta testing. Newest first.
 
 ---
 
+## TKT-00010 — Rating badge disagreed with the Reviews section (+2 minor notes)
+
+**2026-08-13** · Priority: Medium · Reported by John Tucker (filed by Claude Cowork) · Branch `beta-0.0.1-tkt0010`
+
+### Symptom
+
+The star rating + review count shown near a listing's title (e.g.
+"4.9 (63)") didn't match its own Reviews section a few scrolls down, which
+said "No reviews yet" — on every listing checked, real and sample alike.
+The reporter's guess: the badge was quietly reading the owner's aggregate
+profile stats instead of the tool's own.
+
+### Root cause
+
+Confirmed reproducible, but **not** what was suspected. Both the badge
+(`tools/[id]/page.tsx`, `ToolCard.tsx`) and the Reviews section
+(`ReviewList.tsx` → `getReviewsForTool`) already read tool-scoped data —
+`tools.rating` / `tools.review_count`, which `update_ratings_after_review()`
+correctly recomputes from `reviews WHERE tool_id = …` on every real review
+insert. The bug was in `supabase/seed.sql`: every demo tool's `rating` /
+`review_count` columns were hardcoded literally from its owner's aggregate
+numbers (e.g. Mike Harrison's Makita drill row ended in the same `4.9, 63`
+copied from his profile row), while the file inserts zero actual `reviews`
+rows anywhere. So the badge showed the fabricated seed number while the
+Reviews section correctly showed 0 real rows for that `tool_id`. This can't
+happen for a real, user-created tool — only demo data bypassed the review
+flow (and its trigger) to fake a "proven" look.
+
+### Changes
+
+**`supabase/seed.sql`** — `rating` / `review_count` zeroed on all 29 demo
+tool rows (matches the column defaults, and their genuinely empty review
+history). A comment above the block explains why, so a future demo-data
+edit doesn't reintroduce the same shortcut.
+
+### Also flagged in the same report (bundled here, both low priority)
+
+**"Times viewed" stuck at 0** — `incrementViewCount()` → the
+`increment_tool_views` RPC already existed and worked, but nothing in the
+app ever called it; the detail page is statically generated (ISR) with no
+client-side effect wired to fire it. Added `useIncrementToolViews` (new hook,
+`packages/supabase/src/hooks/useTools.ts`) and `<ViewCounter>` (new,
+`apps/web/src/components/ViewCounter.tsx`) — a render-nothing client island
+on `tools/[id]/page.tsx`, same pattern as `<AvailabilityPill>`, that fires
+the increment once per page load.
+
+**"Your payment is protected" copy** (`ToolBookingPanel.tsx`) — contradicted
+`/terms`, which is explicit that Toolshare doesn't process payments or hold
+funds during the cash-only pilot. Reworded to "Backed by a signed rental
+agreement" (swapped the `Lock` icon for `FileCheck` to match), pointing at
+the thing that's actually true — the electronically signed rental agreement
+described in the same Terms page.
+
+### Verification
+
+- `pnpm --filter @toolshare/supabase typecheck` — clean.
+- `pnpm --filter @toolshare/web typecheck` — clean.
+- Checked `e2e/` for any spec asserting on the old hardcoded demo
+  rating/review numbers — none do; only owner emails are referenced.
+- **Not verified against a live database in this session** — Docker wasn't
+  running, so `supabase db reset` couldn't be run to actually re-seed and
+  confirm a demo listing (e.g. the Makita drill) now shows "No reviews yet"
+  with no badge, and that reloading `/tools/[id]` a few times moves "Times
+  viewed" off 0.
+
+---
+
 ## TKT-00009 — Notification-badge queries returning 503
 
 **2026-08-13** · Priority: Medium · Reported by John Tucker (filed by Claude Cowork) · Branch `beta-0.0.1-tkt0009`

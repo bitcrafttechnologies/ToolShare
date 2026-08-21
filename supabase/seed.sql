@@ -69,6 +69,13 @@ ON CONFLICT (id) DO UPDATE
 -- Replace any previous demo listings before re-seeding.
 DELETE FROM tools WHERE owner_id IN (SELECT id FROM auth.users WHERE email LIKE '%@toolshare-demo.app');
 
+-- rating/review_count are 0 on every row below (TKT-00010): this file seeds
+-- no `reviews` rows, and update_ratings_after_review() only recomputes these
+-- two columns from real review inserts. They used to be hardcoded to each
+-- owner's profiles.owner_rating/review_count_owner instead, which made the
+-- "4.9 (63)" badge on a listing page disagree with its own, genuinely empty
+-- Reviews section. 0 here matches the Reviews section honestly; it'll track
+-- automatically once real reviews exist.
 INSERT INTO tools (
     owner_id, title, description, category_id, condition,
     daily_rate, weekly_rate, deposit_amount, photo_urls,
@@ -85,7 +92,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.8315, 33.4152), 4326)::geography, 'Mesa, AZ',
     true, false,
     0, '{"Battery": "2x 5.0Ah", "Chuck": "1/2 in", "Case": "Included"}'::jsonb,
-    NULL, 4.9, 63),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'david.chen@toolshare-demo.app'),
     'DeWalt 7-1/4" Circular Saw', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 1, 'good'::tool_condition,
@@ -95,7 +102,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.94, 33.4255), 4326)::geography, 'Tempe, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.7, 41),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'sarah.whitfield@toolshare-demo.app'),
     'Milwaukee M18 Impact Driver', 'Barely used and kept in excellent condition. Cleaned and checked before every rental.', 1, 'like_new'::tool_condition,
@@ -105,7 +112,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.8413, 33.3062), 4326)::geography, 'Chandler, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.8, 28),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'elena.rodriguez@toolshare-demo.app'),
     '192-Piece Mechanic''s Socket Set', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 2, 'good'::tool_condition,
@@ -115,7 +122,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.186, 33.5387), 4326)::geography, 'Glendale, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.6, 19),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'tom.nguyen@toolshare-demo.app'),
     'Ridgid 24" Pipe Wrench Pair', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 2, 'good'::tool_condition,
@@ -125,7 +132,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.074, 33.4484), 4326)::geography, 'Phoenix, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.5, 12),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'mike.harrison@toolshare-demo.app'),
     'Framing Hammer & Nail Bar Kit', 'Older but reliable. Cosmetic wear, no performance issues.', 2, 'fair'::tool_condition,
@@ -135,7 +142,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.789, 33.3528), 4326)::geography, 'Gilbert, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.3, 8),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'elena.rodriguez@toolshare-demo.app'),
     'Heavy-Duty Rear-Tine Garden Tiller', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 3, 'good'::tool_condition,
@@ -145,7 +152,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.2374, 33.5806), 4326)::geography, 'Peoria, AZ',
     true, true,
     20, '{}'::jsonb,
-    NULL, 4.9, 37),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'sarah.whitfield@toolshare-demo.app'),
     'Honda Self-Propelled Lawn Mower', 'Barely used and kept in excellent condition. Cleaned and checked before every rental.', 3, 'like_new'::tool_condition,
@@ -155,7 +162,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.9261, 33.4942), 4326)::geography, 'Scottsdale, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.8, 52),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'tom.nguyen@toolshare-demo.app'),
     'Stihl Gas Hedge Trimmer', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 3, 'good'::tool_condition,
@@ -165,7 +172,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.368, 33.6292), 4326)::geography, 'Surprise, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.4, 15),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'mike.harrison@toolshare-demo.app'),
     '9 cu ft Towable Concrete Mixer', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 4, 'good'::tool_condition,
@@ -175,7 +182,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.5838, 33.3703), 4326)::geography, 'Buckeye, AZ',
     true, true,
     30, '{}'::jsonb,
-    NULL, 4.6, 22),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'david.chen@toolshare-demo.app'),
     'Plate Compactor (5500 lb force)', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 4, 'good'::tool_condition,
@@ -185,7 +192,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.8315, 33.4152), 4326)::geography, 'Mesa, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.7, 18),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'elena.rodriguez@toolshare-demo.app'),
     '14" Walk-Behind Concrete Saw', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 4, 'good'::tool_condition,
@@ -195,7 +202,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.074, 33.4484), 4326)::geography, 'Phoenix, AZ',
     true, false,
     0, '{}'::jsonb,
-    'Wet-cut only. Eye and hearing protection required.', 4.5, 11),
+    'Wet-cut only. Eye and hearing protection required.', 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'tom.nguyen@toolshare-demo.app'),
     '3-Ton Floor Jack + Jack Stands', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 5, 'good'::tool_condition,
@@ -205,7 +212,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.5496, 33.4151), 4326)::geography, 'Apache Junction, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.8, 31),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'sarah.whitfield@toolshare-demo.app'),
     'Autel OBD2 Diagnostic Scanner', 'Barely used and kept in excellent condition. Cleaned and checked before every rental.', 5, 'like_new'::tool_condition,
@@ -215,7 +222,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.94, 33.4255), 4326)::geography, 'Tempe, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.9, 44),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'mike.harrison@toolshare-demo.app'),
     '2-Ton Folding Engine Hoist', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 5, 'good'::tool_condition,
@@ -225,7 +232,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.186, 33.5387), 4326)::geography, 'Glendale, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.6, 16),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'david.chen@toolshare-demo.app'),
     '100 ft Drain Auger / Snake', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 6, 'good'::tool_condition,
@@ -235,7 +242,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.8413, 33.3062), 4326)::geography, 'Chandler, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.7, 26),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'elena.rodriguez@toolshare-demo.app'),
     'Ridgid Pipe Threading Machine', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 6, 'good'::tool_condition,
@@ -245,7 +252,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.074, 33.4484), 4326)::geography, 'Phoenix, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.4, 9),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'david.chen@toolshare-demo.app'),
     '3200 PSI Gas Pressure Washer', 'Barely used and kept in excellent condition. Cleaned and checked before every rental.', 6, 'like_new'::tool_condition,
@@ -255,7 +262,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.789, 33.3528), 4326)::geography, 'Gilbert, AZ',
     true, true,
     15, '{}'::jsonb,
-    NULL, 4.7, 58),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'sarah.whitfield@toolshare-demo.app'),
     'Fluke 87V Digital Multimeter', 'Barely used and kept in excellent condition. Cleaned and checked before every rental.', 7, 'like_new'::tool_condition,
@@ -265,7 +272,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.9261, 33.4942), 4326)::geography, 'Scottsdale, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.9, 33),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'tom.nguyen@toolshare-demo.app'),
     'Greenlee Conduit Bender Set', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 7, 'good'::tool_condition,
@@ -275,7 +282,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.8315, 33.4152), 4326)::geography, 'Mesa, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.5, 14),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'mike.harrison@toolshare-demo.app'),
     '240 ft Steel Fish Tape Kit', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 7, 'good'::tool_condition,
@@ -285,7 +292,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.2374, 33.5806), 4326)::geography, 'Peoria, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.3, 7),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'elena.rodriguez@toolshare-demo.app'),
     '5x8 Enclosed Utility Trailer', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 8, 'good'::tool_condition,
@@ -295,7 +302,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.368, 33.6292), 4326)::geography, 'Surprise, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.8, 40),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'tom.nguyen@toolshare-demo.app'),
     '18 ft Car Hauler Trailer', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 8, 'good'::tool_condition,
@@ -305,7 +312,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.5838, 33.3703), 4326)::geography, 'Buckeye, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.6, 21),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'mike.harrison@toolshare-demo.app'),
     '7x12 Hydraulic Dump Trailer', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 8, 'good'::tool_condition,
@@ -315,7 +322,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.074, 33.4484), 4326)::geography, 'Phoenix, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.7, 13),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'david.chen@toolshare-demo.app'),
     '19 ft Electric Scissor Lift', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 9, 'good'::tool_condition,
@@ -325,7 +332,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.074, 33.4484), 4326)::geography, 'Phoenix, AZ',
     true, true,
     40, '{}'::jsonb,
-    'Operator certification required. Harness provided.', 4.8, 24),
+    'Operator certification required. Harness provided.', 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'elena.rodriguez@toolshare-demo.app'),
     '34 ft Towable Boom Lift', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 9, 'good'::tool_condition,
@@ -335,7 +342,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.8315, 33.4152), 4326)::geography, 'Mesa, AZ',
     true, true,
     40, '{}'::jsonb,
-    NULL, 4.6, 10),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'sarah.whitfield@toolshare-demo.app'),
     'Lincoln 180 Amp MIG Welder', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 10, 'good'::tool_condition,
@@ -345,7 +352,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.94, 33.4255), 4326)::geography, 'Tempe, AZ',
     true, false,
     0, '{}'::jsonb,
-    'Auto-darkening helmet and gloves included.', 4.7, 29),
+    'Auto-darkening helmet and gloves included.', 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'mike.harrison@toolshare-demo.app'),
     'Hypertherm 45 Plasma Cutter', 'Barely used and kept in excellent condition. Cleaned and checked before every rental.', 10, 'like_new'::tool_condition,
@@ -355,7 +362,7 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-111.8413, 33.3062), 4326)::geography, 'Chandler, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.9, 17),
+    NULL, 0, 0),
 (
     (SELECT id FROM auth.users WHERE email = 'tom.nguyen@toolshare-demo.app'),
     'Welding Helmet & Safety Kit', 'Well maintained and fully functional with normal signs of use. Everything works as it should.', 10, 'good'::tool_condition,
@@ -365,6 +372,6 @@ INSERT INTO tools (
     ST_SetSRID(ST_MakePoint(-112.186, 33.5387), 4326)::geography, 'Glendale, AZ',
     true, false,
     0, '{}'::jsonb,
-    NULL, 4.5, 12);
+    NULL, 0, 0);
 
 COMMIT;

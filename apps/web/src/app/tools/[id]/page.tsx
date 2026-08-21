@@ -12,6 +12,7 @@ import { ToolGallery } from '@/components/ToolGallery';
 import { SiteHeader } from '@/components/SiteHeader';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { AvailabilityPill } from '@/components/AvailabilityPill';
+import { ViewCounter } from '@/components/ViewCounter';
 
 const { CategoryTag, Rating, Avatar, Badge, isToolCategory } = Components;
 
@@ -102,6 +103,7 @@ export default async function ToolDetailPage({ params }: Props) {
   return (
     <>
       <SiteHeader showSearch />
+      <ViewCounter toolId={tool.id} />
 
       <main>
         <script

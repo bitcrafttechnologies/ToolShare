@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Lock, CalendarDays, Pencil } from 'lucide-react';
+import { FileCheck, CalendarDays, Pencil } from 'lucide-react';
 import type { Tool } from '@toolshare/types';
 import { calculateBookingPrice } from '@toolshare/domain';
 import { Components } from '@toolshare/ui';
@@ -162,9 +162,13 @@ export function ToolBookingPanel({ tool }: Props) {
         </p>
       )}
 
+      {/* "Your payment is protected" used to run here regardless of payment
+          method — misleading during the cash-only pilot, where Toolshare
+          never touches the money (see /terms). What actually backs a
+          booking is the signed rental agreement, so say that instead. */}
       <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-        <Lock size={12} aria-hidden="true" />
-        Your payment is protected
+        <FileCheck size={12} aria-hidden="true" />
+        Backed by a signed rental agreement
       </p>
     </div>
   );
