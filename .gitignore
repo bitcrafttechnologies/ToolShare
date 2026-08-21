@@ -110,8 +110,16 @@ internal/
 .mcp.json
 Claude.md
 
+.codex/
+AGENTS.md
+
+ToolShare-AZ-Investor-Outreach-2026-08-19.pdf
+ToolShare-Status-Brief-2026-08-19.pdf
+
 PILOT-SMOKE-TEST.md
 PILOT-TESTING.md
 
 # Google Cloud SDK was installed inside the repo (~465 MB) — never commit it
 google-cloud-sdk/
+
+scripts/emails/
