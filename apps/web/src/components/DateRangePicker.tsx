@@ -45,9 +45,14 @@ export function DateRangePicker({ toolId, startDate, endDate, onChange }: Props)
 
   return (
     <div
-      // w-fit + max-w-full + overflow-x-auto: centers on wide screens, and can
-      // never push past a narrow container (the sticky booking rail on mobile).
-      // The day-size vars shrink cells so 7 columns fit a ~320px phone.
+      // w-fit + max-w-full: shrink-wraps to the grid's actual ~16.5rem
+      // (7 × 2.25rem cells) so mx-auto can center it, and never claims more
+      // than the container has (the sticky booking rail on mobile). That
+      // shrink-wrap only works because the grid itself is sized off the
+      // day-cell vars below rather than stretched to fill its container —
+      // see the `table:not(.rdp-month_grid)` carve-out in globals.css.
+      // overflow-x-auto is a fallback for anything narrower than the grid
+      // (a phone under ~270px), not the primary fit mechanism.
       className="mx-auto w-fit max-w-full overflow-x-auto rounded-md border border-border bg-surface p-2"
       // Terracotta accent to match the app (react-day-picker reads these vars).
       style={
@@ -57,6 +62,12 @@ export function DateRangePicker({ toolId, startDate, endDate, onChange }: Props)
           '--rdp-today-color': 'var(--color-primary-600)',
           '--rdp-day-width': '2.25rem',
           '--rdp-day-height': '2.25rem',
+          // The clickable button inside each cell has its own size vars,
+          // defaulting to 42px — wider than the 36px cell above. Left
+          // unset, the button forced its column wider regardless of
+          // --rdp-day-width (part of TKT-00011/12/13).
+          '--rdp-day_button-width': '2.25rem',
+          '--rdp-day_button-height': '2.25rem',
           '--rdp-font-family': 'inherit',
         } as React.CSSProperties
       }

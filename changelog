@@ -4,6 +4,87 @@ Ticket-by-ticket record of changes from live beta testing. Newest first.
 
 ---
 
+## TKT-00011 — Booking date-picker overflowed its card (+ TKT-00012, TKT-00013)
+
+**2026-08-13 / 2026-08-14** · Priority: High · Reported by John Tucker (filed by Claude Cowork) · Branch `beta-0.0.1-tkt0011`
+
+Three reports, one bug: TKT-00011 caught it on a ~500px mobile viewport
+(Fri/Sat columns run off the edge of the screen), TKT-00012 caught the exact
+same thing on a full 1920px desktop window (the grid runs 188px past its own
+booking card, clipping Thu/Fri/Sat), and TKT-00013 was a resend of both
+after the reporter thought the first two hadn't landed. Bundled here since
+one fix covers all three.
+
+### Symptom
+
+Opening the "Dates" calendar on a tool detail page renders a 7-column grid
+wider than its container, at any screen size — a fixed 74px-per-column
+render regardless of the 36px cell size the component actually asks for,
+cutting off Thu/Fri/Sat (or just Sat on mobile) with no way to reach them.
+
+### Root cause
+
+`DateRangePicker.tsx` sets `--rdp-day-width` / `--rdp-day-height` to
+`2.25rem` (36px) and wraps `react-day-picker`'s grid in a
+`w-fit max-w-full overflow-x-auto` container, expecting the grid to
+shrink-wrap to a fixed ~252px (7 × 36px) and get centered. Two things
+defeated that:
+
+1. `react-day-picker`'s calendar grid is a real `<table>`, and its own CSS
+   (confirmed directly in `node_modules/react-day-picker/src/style.css`)
+   never sets a `width` on it — it's meant to size itself off its cells. But
+   `packages/ui/styles/globals.css` had an unscoped `table { width: 100%; }`
+   base rule, which stretched the calendar's table to fill its container
+   regardless of the 36px cell vars. With the browser's default
+   `table-layout: auto`, a `width: 100%` table sizes its columns off the
+   *available* space, not the per-cell hints — which is why the measured
+   overflow (568px / 74px-per-column) never matched the 36px setting at
+   all: it was never being applied to the table's own width in the first
+   place. And a `width: fit-content` wrapper around a `width: 100%` child is
+   a circular-sizing case most browsers resolve by growing the wrapper to
+   fill the available space too — so the "can never push past a narrow
+   container" comment on the wrapper was describing behavior the CSS didn't
+   actually have.
+2. Separately, `--rdp-day-width` only resizes the `<td>` — the actual
+   clickable `<button>` inside each cell has its own vars,
+   `--rdp-day_button-width` / `--rdp-day_button-height`, defaulting to 42px.
+   Left unset, the button would have forced its column wider than 36px
+   regardless of fix #1.
+
+### Changes
+
+**`packages/ui/styles/globals.css`** — the global `table` rule scoped to
+`table:not(.rdp-month_grid)`, carving out the calendar so it goes back to
+sizing itself off its cells like the vendor intended, instead of being
+stretched to its container.
+
+**`apps/web/src/components/DateRangePicker.tsx`** — added
+`--rdp-day_button-width` / `--rdp-day_button-height` overrides (also
+`2.25rem`) alongside the existing cell-size vars, so the button and its
+cell agree on 36px instead of the button forcing 42px. Updated the
+wrapper's comment, which had been asserting a containment guarantee the
+CSS wasn't actually providing.
+
+### Verification
+
+- `pnpm --filter @toolshare/web typecheck` — clean.
+- Confirmed directly against the installed package
+  (`node_modules/react-day-picker/src/style.css`, v10.0.1) that
+  `.rdp-month_grid` sets no `width`/`table-layout` of its own — the global
+  `table` rule was the only source of the `width: 100%`, which is why
+  scoping it away is sufficient without needing `table-layout: fixed` or
+  any other override.
+- Grepped `apps/web/src` and `apps/mobile/src` for other `<table>` usage —
+  none exists, so narrowing the global rule has no other surface to affect.
+- **Not verified in an actual rendered browser this session** — Docker
+  wasn't running, so there was no local Supabase stack to load a real tool
+  detail page against. Before merging: open a tool's booking Dates
+  calendar at both a ~375px mobile width and a full desktop window and
+  confirm all 7 day columns (including Thu/Fri/Sat) render inside the card
+  and are clickable.
+
+---
+
 ## TKT-00010 — Rating badge disagreed with the Reviews section (+2 minor notes)
 
 **2026-08-13** · Priority: Medium · Reported by John Tucker (filed by Claude Cowork) · Branch `beta-0.0.1-tkt0010`
