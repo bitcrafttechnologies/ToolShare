@@ -121,3 +121,16 @@ export function useDeleteTool(supabase: SupabaseClient, ownerId: string) {
     },
   });
 }
+
+/**
+ * Fire-and-forget "Times viewed" increment. No `onSuccess` invalidation —
+ * the detail page is statically generated (ISR), so a fresher view_count
+ * showing up mid-visit isn't useful; it'll be current next time the page
+ * revalidates.
+ */
+export function useIncrementToolViews(supabase: SupabaseClient) {
+  const repo = createToolRepository(supabase);
+  return useMutation({
+    mutationFn: (toolId: string) => repo.incrementViewCount(toolId),
+  });
+}
