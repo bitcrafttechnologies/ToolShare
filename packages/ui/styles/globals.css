@@ -600,7 +600,14 @@
     margin: var(--space-6) 0;
   }
 
-  table {
+  /* :not(.rdp-month_grid) excludes react-day-picker's own calendar table.
+     It never sets a width itself, relying on its day cells' widths to size
+     the table naturally — a blanket `width: 100%` here overrode that and
+     stretched the grid to fill its container regardless of the day-cell
+     size DateRangePicker sets, which is what let it render wider than its
+     card on desktop and off the edge of the viewport on mobile
+     (TKT-00011/12/13, three reports of the same bug). */
+  table:not(.rdp-month_grid) {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
