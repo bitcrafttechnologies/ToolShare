@@ -4,6 +4,159 @@ Ticket-by-ticket record of changes from live beta testing. Newest first.
 
 ---
 
+## TKT-00009 — Notification-badge queries returning 503
+
+**2026-08-13** · Priority: Medium · Reported by John Tucker (filed by Claude Cowork) · Branch `beta-0.0.1-tkt0009`
+
+### Symptom
+
+Two Supabase REST calls failed with HTTP 503 on every single page load,
+site-wide: the unread-messages count and the pending-bookings count that
+power the header's notification badges. Every other query (profiles,
+favorites, reviews) succeeded. No error reached the user — the badges just
+never showed a number, even with a real pending booking sitting there.
+
+### Root cause
+
+Confirmed reproducible from the code. `message.repository.ts` and
+`booking.repository.ts` were the only two places in the app using
+`.select('id', { count: 'exact', head: true })`. An exact count can't stop
+at a `LIMIT`, so Postgres has to evaluate RLS for every candidate row to
+produce it. The unread-message count made this worse than it needed to be:
+its own filter (`is_read=false`, `sender_id<>me`) never scoped by user at
+all — that was left entirely to messages' SELECT policy, a correlated
+`EXISTS` subquery against `bookings` evaluated once per candidate row, the
+single most expensive query shape anywhere in the schema. Both badge
+components remount on every client-side navigation (rendered per-page
+rather than once in a shared layout), so this was firing constantly across
+the whole site and periodically saturating the connection pool as a 503 —
+which also explains the report's secondary note of occasional 503s on the
+app's own page data requests, since they share the same pool.
+
+Both call sites also swallowed their errors completely: neither notifier
+read `isError`/`error`, so a 503 just rendered as "0" with nothing in the
+console to explain it.
+
+### Changes
+
+**`supabase/migrations/0020_notification_counts.sql`** (new) — two
+`SECURITY DEFINER` functions, `get_unread_message_count()` and
+`get_pending_booking_count()`, that do the same user-scoping as an explicit
+`JOIN`/`WHERE` instead of a per-row RLS check, reading `auth.uid()`
+internally rather than taking it as an argument (a `SECURITY DEFINER`
+function bypasses RLS entirely, so a caller-supplied id would let any
+authenticated user read anyone else's counts). `EXECUTE` is revoked from
+`anon`/`PUBLIC` and granted only to `authenticated`, matching the grant
+discipline in 0015.
+
+**`packages/supabase/src/repositories/message.repository.ts`** —
+`getUnreadCount()` now calls the RPC instead of the `count: 'exact'` query;
+dropped the now-unnecessary `userId` argument.
+
+**`packages/supabase/src/repositories/booking.repository.ts`** —
+`getPendingRequestCount()` likewise now calls the RPC; dropped `ownerId`.
+
+**`packages/supabase/src/hooks/useMessages.ts`** /
+**`useBookings.ts`** — the two hook call sites updated to match (the `userId`
+they already receive still drives the query key and `enabled` gate; it just
+no longer gets threaded into the repo call).
+
+**`apps/web/src/components/MessagesNotifier.tsx`** /
+**`BookingsNotifier.tsx`** — both now `console.error('[toolshare] ...', err)`
+on a failed count, matching the existing non-fatal-error convention
+elsewhere in the app (`loadTools.ts`, `ToolPhotoPicker.tsx`). The badge
+itself still just omits on failure rather than showing an error state — it's
+a background poll, not worth interrupting the header for — but a future
+503 will now show up in the console instead of reading as "no unread
+messages."
+
+### Deferred — not done in this pass
+
+The research behind this ticket also flagged that `SiteHeader` (and the
+notifier components it renders via `HeaderAccount`) is mounted individually
+in ~19 page files instead of once in the root layout, which is *why* these
+queries were firing on every navigation rather than just periodically.
+`SiteHeader` takes a per-page `showSearch` prop (search bar shows on
+`/tools/[id]`, `/search`, a few others; not on most pages), so hoisting it
+into `app/layout.tsx` isn't a drop-in change — it needs a route-aware way to
+decide `showSearch` from the layout, and touches every one of those 19
+pages. That's a real reduction in query frequency worth doing, but it's a
+separate, larger structural change from the query-shape fix above, and out
+of scope for this pass. Filing as a follow-up rather than doing it under
+this ticket.
+
+### Verification
+
+- `pnpm --filter @toolshare/supabase typecheck` — clean.
+- `pnpm --filter @toolshare/web typecheck` — clean.
+- **Not verified against a live database in this session** — Docker wasn't
+  running, so the local Supabase stack couldn't come up to actually apply
+  migration `0020` and exercise the new RPCs. Before merging: `supabase db
+  reset` locally, then confirm both `/rest/v1/rpc/get_unread_message_count`
+  and `/rest/v1/rpc/get_pending_booking_count` return a correct count for a
+  signed-in test user (not just 200), and that an unread message / pending
+  booking still shows up in the badge.
+
+---
+
+## TKT-00007 — Booking detail photo shows a blank placeholder
+
+**2026-08-13** · Priority: Low · Reported by John Tucker (filed by Claude Cowork) · Branch `beta-0.0.1-tkt0007`
+
+### Symptom
+
+Booked a test rental end-to-end (Makita 18V LXT Cordless Drill), then opened
+the resulting booking detail page. The tool photo shown correctly on the
+listing/search page rendered as a blank gray placeholder on
+`/bookings/[id]`.
+
+### Investigation
+
+Checked the render path against every other place the app shows a booking's
+tool photo. It's identical: `BookingDetail.tsx` reads
+`booking.tool?.photo_urls?.[0]` and falls back to the same placeholder icon
+as `BookingRow.tsx` (the `/bookings` list row) and `ToolCard.tsx` (search
+grid) — same field, same `tool:tools(...)` join in `BOOKING_SELECT`, same
+open `USING (true)` RLS policy on `tools`, same full public-URL values in
+storage. No trigger clears `photo_urls` on booking creation.
+
+The placeholder only renders when that value is empty at render time — this
+was the intended empty state firing, not an image request failing — which
+rules out a query, RLS, or Next/Image config bug and points at the data
+being genuinely absent for that one render.
+
+### Root cause
+
+**Not reproducible from static code review.** No defect found in the render
+path itself. The most plausible explanation is a cold-cache race specific to
+the "Confirm → View booking" flow: `useCreateBooking`'s `onSuccess` handler
+invalidated the renter/owner list queries but never populated the
+booking-detail query, so clicking "View booking" straight off the
+confirmation screen was the one moment guaranteed to hit a brand-new,
+unwarmed fetch instead of already-known data. Nothing proves this was the
+actual cause, but it's the one code path that differs between this report
+and any later, ordinary visit to the same page.
+
+### Changes
+
+**`packages/supabase/src/hooks/useBookings.ts`** — `useCreateBooking`'s
+`onSuccess` now seeds `bookingKeys.detail(id)` with the full booking object
+the insert already returns (it's selected through `BOOKING_SELECT`, so it
+already carries `tool.photo_urls`). "View booking" now renders from that
+seeded data immediately instead of racing a fresh fetch.
+
+### Verification
+
+- `pnpm --filter @toolshare/supabase typecheck` — clean.
+- This was a defensive fix for a report that couldn't be reproduced from
+  source, so there's no failing repro to turn green here. Next live test:
+  confirm the photo appears immediately after "View booking" on a fresh
+  booking; if it still goes blank, escalate as a data issue and check
+  whether `tool.photo_urls` is actually empty in the Supabase response for
+  that specific booking.
+
+---
+
 ## TKT-00002 — Easy pass signup (Google)
 
 **2026-08-08** · Priority: Medium · Suggested by Adrian Teply · Branch `beta-0.0.1-tkt-00002`

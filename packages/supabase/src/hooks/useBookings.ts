@@ -45,7 +45,7 @@ export function usePendingRequestCount(supabase: SupabaseClient, ownerId: string
   const repo = createBookingRepository(supabase);
   return useQuery({
     queryKey: bookingKeys.pendingCount(ownerId ?? ''),
-    queryFn: () => repo.getPendingRequestCount(ownerId!),
+    queryFn: () => repo.getPendingRequestCount(),
     enabled: !!ownerId,
     staleTime: 30_000,
   });
@@ -56,7 +56,12 @@ export function useCreateBooking(supabase: SupabaseClient) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (request: CreateBookingRequest) => repo.createBooking(request),
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
+      // The insert already comes back through BOOKING_SELECT, tool photo and
+      // all — seed the detail cache with it directly so "View booking" from
+      // the confirmation screen renders instantly instead of racing a fresh,
+      // unwarmed fetch (TKT-00007).
+      qc.setQueryData(bookingKeys.detail(data.id), data);
       void qc.invalidateQueries({ queryKey: bookingKeys.forRenter(variables.renter_id) });
       void qc.invalidateQueries({ queryKey: bookingKeys.forOwner(variables.owner_id) });
     },

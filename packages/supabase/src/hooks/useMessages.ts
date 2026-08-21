@@ -8,7 +8,7 @@ export function useUnreadMessageCount(supabase: SupabaseClient, userId: string |
   const repo = createMessageRepository(supabase);
   return useQuery({
     queryKey: messageKeys.unreadCount(userId ?? ''),
-    queryFn: () => repo.getUnreadCount(userId!),
+    queryFn: () => repo.getUnreadCount(),
     enabled: !!userId,
     staleTime: 30_000,
   });
