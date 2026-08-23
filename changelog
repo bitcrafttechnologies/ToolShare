@@ -4,6 +4,82 @@ Ticket-by-ticket record of changes from live beta testing. Newest first.
 
 ---
 
+## TKT-00011 (follow-up) — Calendar was still overflowing after the first fix
+
+**2026-08-22** · Priority: High · Found during manual retest on `beta-0.0.1-hf_calendar`
+
+The original TKT-00011 fix (below) was real but incomplete — confirmed by manual
+testing after merge: "on any screen size other than fullscreen you have to
+scroll around to get to dates." Verified live this time (local Supabase +
+`next dev`, headless Chrome + CDP measuring actual `getBoundingClientRect()`/
+`getComputedStyle()` rather than reasoning from source alone), which surfaced
+a second bug the original investigation never exercised because the first
+one was sufficient to explain the numbers reported in the tickets.
+
+### What was still wrong
+
+1. **The CSS variable overrides were silently no-ops.** `DateRangePicker.tsx`
+   set `--rdp-day-width`, `--rdp-day_button-width`, etc. via inline `style` on
+   the *wrapper div* around `<DayPicker>`. But `react-day-picker`'s own
+   stylesheet re-declares every one of those variables directly on
+   `.rdp-root` itself (`.rdp-root { --rdp-day-width: 44px; ... }`) —
+   `.rdp-root` is DayPicker's own root element, a **child** of that wrapper.
+   A custom property set on an ancestor only supplies the *inherited* value;
+   `.rdp-root`'s own declaration for the same property wins regardless.
+   Measured directly: `getComputedStyle(.rdp-root).getPropertyValue('--rdp-day-width')`
+   came back `44px`, not the `36px` the component was supposedly setting.
+2. **A global, unscoped `td`/`th` padding rule was also landing on the
+   calendar.** `packages/ui/styles/globals.css` gives every `td`/`th` in the
+   app `padding: var(--space-3) var(--space-4)` (12px/16px) for real data
+   tables — a rule that predates this app having any actual `<table>` besides
+   the calendar. `.rdp-day` cells never expected padding (they're sized
+   entirely by `--rdp-day-width`, with `box-sizing: border-box`), so 32px of
+   forced horizontal padding per cell made a 44px-hinted column impossible to
+   render under **74px** — 42px button + 32px padding, exactly the 74px/column
+   both original reports measured. This is the larger of the two bugs: it
+   alone explains the reported numbers, and was still fully active after the
+   first fix (which only addressed the table's overall `width: 100%`, not the
+   per-cell padding) — which is exactly why the calendar kept overflowing.
+
+### Changes
+
+**`apps/web/src/components/DateRangePicker.tsx`** — moved the `--rdp-*`
+custom property overrides from the wrapper `<div style={...}>` to
+`<DayPicker style={...}>` itself, so they land on `.rdp-root` and actually
+take precedence over its own stylesheet declaration.
+
+**`packages/ui/styles/globals.css`** — extended the existing
+`:not(.rdp-month_grid)` carve-out pattern to the `td`/`th` padding rules:
+`td:not(.rdp-day)`, `th:not(.rdp-weekday)`.
+
+### Verification (this time, actually live)
+
+Ran `apps/web` against a local Supabase instance, drove headless Chrome over
+CDP (per the established pattern for this app — see project notes on
+verifying signed-out pages), clicked "Dates" on a real tool listing, and
+measured the rendered DOM directly rather than reasoning from source:
+
+| | Before this follow-up | After |
+|---|---|---|
+| `.rdp-day` computed width | 74px | 36px |
+| `.rdp-month_grid` width | 518px | 252px |
+| Calendar right edge vs. card right edge (1024px viewport) | ~270px past | fully inside |
+| Calendar right edge vs. viewport (500px viewport) | off-screen | fully inside |
+
+Screenshots at both 1024px and 500px confirm all 7 day columns render inside
+the booking card with no clipping and no scroll needed. `pnpm --filter
+@toolshare/web typecheck` is clean for the files touched here.
+
+**Unrelated pre-existing issue found during this session, not caused by this
+fix:** `pnpm --filter @toolshare/web typecheck` currently fails on
+`packages/ui/src/navigation/{navbar,pagination,tab-bar}.tsx` with `@types/react`
+module-resolution errors — fallout from the react/react-dom version-pin
+troubleshooting done earlier this session (see that conversation), unrelated
+to any file this ticket touches. Flagging rather than fixing here since it's
+a separate, still-open toolchain issue.
+
+---
+
 ## TKT-00011 — Booking date-picker overflowed its card (+ TKT-00012, TKT-00013)
 
 **2026-08-13 / 2026-08-14** · Priority: High · Reported by John Tucker (filed by Claude Cowork) · Branch `beta-0.0.1-tkt0011`

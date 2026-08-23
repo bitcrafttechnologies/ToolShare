@@ -81,7 +81,7 @@ export default function TermsPage() {
       </p>
 
       <h2>Contact</h2>
-      <p>Questions about these terms? Reach the Toolshare team at [pilot-contact-email].</p>
+      <p>Questions about these terms? Reach the Toolshare team at {' '}<a href="mailto:support@bitcrafttech.com">support@bitcrafttech.com</a>.</p>
     </LegalDocument>
   );
 }
