@@ -58,7 +58,11 @@ export function FavoriteButton({ toolId, variant = 'overlay', className }: Props
           className,
         )}
       >
-        <Heart size={16} aria-hidden="true" className={favorited ? 'fill-primary' : ''} />
+        <Heart
+          size={16}
+          aria-hidden="true"
+          className={cn('size-4 min-w-4 min-h-4 shrink-0', favorited ? 'fill-primary' : '')}
+        />
         {label}
       </button>
     );
@@ -80,7 +84,10 @@ export function FavoriteButton({ toolId, variant = 'overlay', className }: Props
       <Heart
         size={18}
         aria-hidden="true"
-        className={cn('transition-colors', favorited ? 'fill-primary text-primary' : 'text-stone-700')}
+        className={cn(
+          'size-[18px] min-w-[18px] min-h-[18px] shrink-0 transition-colors',
+          favorited ? 'fill-primary text-primary' : 'text-stone-700',
+        )}
       />
     </button>
   );

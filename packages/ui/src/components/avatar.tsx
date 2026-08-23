@@ -3,7 +3,10 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@toolshare/lib";
 
 const avatarVariants = cva(
-  "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-muted text-muted-foreground font-medium",
+  // No overflow-hidden here — the verified badge below is a sibling of the
+  // clipped inner span, not a child of it, specifically so it isn't cut off
+  // by this element's own circular mask. See the comment on that badge.
+  "relative inline-flex shrink-0 rounded-full bg-surface-muted text-muted-foreground font-medium",
   {
     variants: {
       size: {
@@ -48,16 +51,21 @@ export function Avatar({
 }: AvatarProps) {
   return (
     <span className={cn(avatarVariants({ size }), className)} {...props}>
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={name} className="size-full object-cover" />
-      ) : (
-        <span aria-hidden="true">{getInitials(name)}</span>
-      )}
-      {src && <span className="sr-only">{name}</span>}
+      {/* Circular clipping mask, separated from the outer span so the
+          verified badge (a sibling below, not a child of this) can sit on
+          top of it instead of being clipped by it. */}
+      <span className="relative flex size-full items-center justify-center overflow-hidden rounded-full">
+        {src ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt={name} className="size-full object-cover" />
+        ) : (
+          <span aria-hidden="true">{getInitials(name)}</span>
+        )}
+        {src && <span className="sr-only">{name}</span>}
+      </span>
       {verified && (
         <span
-          className="absolute -bottom-0.5 -right-0.5 flex size-[42%] min-h-[15px] min-w-[15px] items-center justify-center rounded-full bg-gold ring-[2.5px] ring-surface"
+          className="absolute -bottom-0.5 -right-0.5 z-10 flex size-[42%] min-h-[15px] min-w-[15px] items-center justify-center rounded-full bg-gold ring-[2.5px] ring-surface"
           title="Verified"
         >
           <svg
