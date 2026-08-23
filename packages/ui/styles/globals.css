@@ -613,7 +613,15 @@
     font-size: 0.875rem;
   }
 
-  th {
+  /* :not(.rdp-weekday) — same reasoning, found later: this generic padding
+     was landing on the calendar's weekday header cells too. th/td padding
+     is meant for real data tables (none exist in the app yet), not
+     react-day-picker's own cells, which size themselves off --rdp-day-width
+     and expect zero padding. 16px of horizontal padding per side made each
+     44px-hinted day column impossible to render under ~74px regardless of
+     the width fix above — this was the second, larger half of
+     TKT-00011/12/13's overflow, not just the table-width issue. */
+  th:not(.rdp-weekday) {
     text-align: left;
     font-weight: 600;
     color: var(--color-muted-foreground);
@@ -621,7 +629,7 @@
     border-bottom: 1px solid var(--color-border-strong);
   }
 
-  td {
+  td:not(.rdp-day) {
     padding: var(--space-3) var(--space-4);
     border-bottom: 1px solid var(--color-border);
   }
