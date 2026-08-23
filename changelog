@@ -4,6 +4,82 @@ Ticket-by-ticket record of changes from live beta testing. Newest first.
 
 ---
 
+## Verified badge clipped by its own avatar mask; favorite heart rendering as a dot
+
+**2026-08-23** · Priority: Medium · Reported by Tucker (direct, no ticket number) · Branch `beta-0.0.1-hf_badge-adjust`
+
+Two small, unrelated UI bugs caught during manual testing.
+
+### 1. Verified badge hidden behind the avatar's own circular mask
+
+`Avatar`'s root `<span>` carried both `overflow-hidden rounded-full` (to
+clip the photo/initials into a circle) **and** the verified checkmark
+badge as a child, positioned `absolute -bottom-0.5 -right-0.5` — i.e.
+deliberately hanging slightly outside the circle's edge. Same element, same
+mask: the badge's own container was clipping it.
+
+**Fix (`packages/ui/src/components/avatar.tsx`)** — split the root span in
+two. An inner span now does the circular clipping (photo/initials only);
+the outer span keeps sizing and positioning context but drops
+`overflow-hidden`, so the badge — now a sibling of the clipped inner span,
+not a child of it — renders on top instead of being cut off.
+
+### 2. Favorite heart rendering as a tiny dot on every tool card
+
+Reproduced live (screenshot + `getComputedStyle`/`getBoundingClientRect`
+via headless Chrome/CDP) rather than guessed from source, since the code
+itself gave no reason to expect this. Measured the actual heart `<svg>`:
+`width` computed to **2px** against an 18px attribute and an 18px explicit
+Tailwind size class — height was a correct 18px, only width collapsed.
+
+Isolated the exact mechanism by toggling properties live on the rendered
+page: neither the `width` XML attribute, a `size-[18px]` utility class, nor
+even `svg.style.setProperty('width', '18px', 'important')` — the strongest
+possible override — changed anything. Only two things fixed it:
+`max-width: none`, or an explicit `min-width`. That points at a genuine
+Chrome flex-sizing quirk, not a specificity bug: `packages/ui/styles/globals.css`
+gives every `img`/`svg`/`video` a blanket `max-width: 100%`, and on an SVG
+that's a flex item with `flex-basis: auto` and no explicit `min-width`
+(which defaults to `auto`), Chrome's "automatic minimum size" calculation
+for the item can collapse it to a couple of pixels wide regardless of its
+specified width — `min-width: auto` is what invokes that calculation at
+all, so anything that gives the item a real `min-width` (or removes the
+competing `max-width`) sidesteps it entirely per spec.
+
+This is a single-icon-flex-child pattern (an icon alone in a
+`flex items-center justify-center` container, no sibling text), which is
+exactly `FavoriteButton`'s overlay variant and nothing else currently
+using raw `<button>` markup in the app — every other icon button goes
+through `Components.Button`'s `[&_svg]:size-4` convention, which is why
+this hadn't shown up anywhere else yet.
+
+**Changes:**
+- **`apps/web/src/components/FavoriteButton.tsx`** — added matching
+  `min-w-*`/`min-h-*` classes alongside the existing size classes on both
+  variants (`min-w-4 min-h-4` / `min-w-[18px] min-h-[18px]`), the direct,
+  local fix.
+- **`packages/ui/styles/globals.css`** — also removed `svg` from the shared
+  `img, svg, video { max-width: 100% }` reset (kept for `img`/`video`).
+  This is the same latent bug for *any* icon-only flex button in the app,
+  not just this one, and no SVG here relies on `max-width: 100%` for its
+  sizing (lucide icons and the hand-rolled ones all set explicit
+  width/height or a `size-*` class) — `display: block` for `svg` is
+  already covered separately by Tailwind's own preflight, so nothing else
+  changes. Fixing both: the local fix is the guaranteed, targeted one; the
+  global fix closes off the same failure mode elsewhere before it's
+  reported as a separate, harder-to-connect bug later.
+
+### Verification
+
+- Live, not just typecheck: ran `apps/web` against a local dev server,
+  drove headless Chrome over CDP, and confirmed both fixes on the actual
+  rendered page (search results grid, and a verified owner's avatar on a
+  tool detail page) — screenshots show a normal heart outline on every
+  card and a fully visible checkmark badge on the avatar.
+- `pnpm --filter @toolshare/web typecheck` and `pnpm --filter @toolshare/ui
+  typecheck` — clean for every file this touched. Both still fail on the
+  pre-existing, unrelated `packages/ui/src/navigation/{navbar,pagination,tab-bar}.tsx`
+  `@types/react` resolution errors noted in the previous entry.
 ## TKT-00011 (follow-up) — Calendar was still overflowing after the first fix
 
 **2026-08-22** · Priority: High · Found during manual retest on `beta-0.0.1-hf_calendar`

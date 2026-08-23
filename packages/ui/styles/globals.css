@@ -854,8 +854,18 @@
   }
 
   /* ---- Media ---------------------------------------------------------------- */
+  /* svg deliberately excluded: `max-width: 100%` on an SVG that's a flex
+     item (any single-icon flex/circular button — the favorite heart, a
+     notification bell, etc.) collides with `flex-basis: auto`'s automatic
+     minimum-size sizing and can collapse the icon down to a couple of
+     pixels wide in Chrome, even with an explicit width/height set on the
+     icon itself — inline `!important` doesn't override it; only removing
+     `max-width` or adding an explicit `min-width` does. No SVG in this app
+     relies on max-width:100% for its sizing (lucide icons and the hand-
+     rolled ones all set explicit width/height or `size-*`), and svg's
+     `display: block` is already covered by Tailwind's own preflight, so
+     dropping it from this rule has no other effect. */
   img,
-  svg,
   video {
     display: block;
     max-width: 100%;
